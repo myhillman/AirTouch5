@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "AirTouch5": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
