@@ -10,7 +10,8 @@ Public Class Form1
     Dim AirTouchPort = 9005 ' Port for AirTouch console HTTP requests
     Dim timeoutMs As Integer = 5000
     Dim udpClient As UdpClient ' Make client global to properly dispose
-    Dim responseMessage As String
+    Private responseMessage As String
+    Dim ZoneNames As New Dictionary(Of Integer, String)
     Structure AirTouchConsole
         ' Capture details of discovered AirTouch console
         Dim IP As String    ' IP address of the console
@@ -74,16 +75,81 @@ Public Class Form1
         End Function
     End Structure
 
+    Enum SupportedEnum
+        No = 0
+        Yes = 1
+    End Enum
+
+    Public Structure ACability
+        Dim ACnumber As Byte
+        Dim ACName As String
+        Dim StartZone As Byte
+        Dim ZoneCount As Byte
+        Dim CoolMode As SupportedEnum
+        Dim FanMode As SupportedEnum
+        Dim DryMode As SupportedEnum
+        Dim HeatMode As SupportedEnum
+        Dim AutoMode As SupportedEnum
+        Dim FanSpeedIA As SupportedEnum
+        Dim FanSpeedTurbo As SupportedEnum
+        Dim FanSpeedPowerful As SupportedEnum
+        Dim FanSpeedHigh As SupportedEnum
+        Dim FanSpeedMedium As SupportedEnum
+        Dim FanSpeedLow As SupportedEnum
+        Dim FanSpeedQuiet As SupportedEnum
+        Dim FanspeedAuto As SupportedEnum
+        Dim MinCoolSetPoint As Byte
+        Dim MaxCoolSetPoint As Byte
+        Dim MinHeatSetPoint As Byte
+        Dim MaxHeatSetPoint As Byte
+        Public Shared Function Parse(data As Byte()) As ACability
+            ' This function parses the extended header from the byte array
+            Dim name(15) As Byte
+            Array.Copy(data, 2, name, 0, 16)    ' extract 16 byte name
+            Dim ACname As String = GetNullTerminatedString(Name, 16)
+            Dim SupportedMasks = CInt(data(20)) << 8 Or data(21) ' 13 bits for supported modes
+            Dim SupportedList As New List(Of SupportedEnum)
+            For i = 1 To 13
+                Dim support = CType(SupportedMasks And 1, SupportedEnum) ' Check if the bit is set
+                SupportedList.Add(support) ' Add to the list
+                SupportedMasks = SupportedMasks >> 1 ' Shift right to check next bit
+            Next
+            SupportedList.Reverse()
+            Return New ACability With {
+                .ACnumber = data(0),
+                .ACName = ACname,
+                .StartZone = data(18),
+                .ZoneCount = data(19),
+                .CoolMode = SupportedList(0),
+                .FanMode = SupportedList(1),
+                .DryMode = SupportedList(2),
+                .HeatMode = SupportedList(3),
+                .AutoMode = SupportedList(4),
+                .FanSpeedIA = SupportedList(5),
+                .FanSpeedTurbo = SupportedList(6),
+                .FanSpeedPowerful = SupportedList(7),
+                .FanSpeedHigh = SupportedList(8),
+                .FanSpeedMedium = SupportedList(9),
+                .FanSpeedLow = SupportedList(10),
+                .FanSpeedQuiet = SupportedList(11),
+                .FanspeedAuto = SupportedList(12),
+                .MinCoolSetPoint = data(22), ' Min cool set point
+                .MaxCoolSetPoint = data(23), ' Max cool set point
+                .MinHeatSetPoint = data(24),
+                .MaxHeatSetPoint = data(25)
+        }
+        End Function
+    End Structure
     Enum ZonePowerStateEnum
         ' Define zone power states
         Off = 0
         [On] = 1
-        turbo = 3
+        Turbo = 3
     End Enum
     Enum ControlMethodEnum
         ' Define zone power states
-        PercentageControl = 0
-        TemperatureControl = 1
+        Percentage = 0
+        Temperature = 1
     End Enum
     Enum SensorStatusEnum
         ' Define sensor status
@@ -116,12 +182,12 @@ Public Class Form1
             ' This function parses the extended header from the byte array
             Return New ZoneStatusMessage With {
                         .ZonePowerState = CType((data(0) >> 6) And &H3, ZonePowerStateEnum), ' Convert byte to ZonePowerStateEnum
-                        .ZoneNumber = data(0) And &H3F,
+                        .ZoneNumber = data(0) And &HF,
                         .ControlMethod = CType((data(1) >> 7) And &H1, ControlMethodEnum), ' Extract control method from bits 6-7
                         .OpenPercentage = data(1) And &H7F,
                         .SetPoint = (data(2) + 100) / 10, ' Set point temperature
                         .Sensor = CType(data(3) >> 7 And &H1, SensorStatusEnum), ' Sensor status from bit 0
-                        .Temperature = (((data(4) << 8) Or data(5)) - 500) / 10,
+                        .Temperature = (((CInt(data(4)) << 8) Or data(5)) - 500) / 10,
                         .Spill = CType((data(6) >> 1) And 1, SpillStatusEnum), ' Spill status from bit 2
                         .Battery = CType((data(6) And &H1), BatteryStatusEnum) ' Low battery status from bit 1
         }
@@ -172,7 +238,6 @@ Public Class Form1
                 Me.Invoke(Sub()
                               ' Update UI here
                               Debug.WriteLine($"Received: {responseMessage}")
-
                           End Sub)
                 ' Check if the response contains the expected data    
                 If Not responseMessage = broadcastMessage Then
@@ -399,11 +464,13 @@ Public Class Form1
             For Each msg In messages
                 Dim m = Message.Parse(msg)
                 Dim index = 2        ' start of zone data
+                ZoneNames.Clear()
                 While index < m.data.Length - 1
                     Dim ZoneNumber = m.data(index)
                     Dim NameLength = m.data(index + 1)
                     Dim ZoneName = Encoding.UTF8.GetString(m.data, index + 2, NameLength)
                     Debug.WriteLine($"Zone: {ZoneNumber} {ZoneName}")
+                    ZoneNames.Add(ZoneNumber, ZoneName)
                     index += NameLength + 2 ' next zone
                 End While
             Next
@@ -428,7 +495,7 @@ Public Class Form1
                 While index < m.data.Length - 1
                     Array.Copy(m.data, index, zoneData, 0, 8)    ' copy 8 bytes of zone data
                     zoneStatus = ZoneStatusMessage.Parse(zoneData) ' parse zone status
-                    Debug.WriteLine($"Zone: {zoneStatus.ZoneNumber} Power State: {zoneStatus.ZonePowerState} Control Method: {zoneStatus.ControlMethod} Open: {zoneStatus.OpenPercentage}% Set Point: {zoneStatus.SetPoint} Temperature: {zoneStatus.Temperature} Spill: {zoneStatus.Spill} Battery: {zoneStatus.Battery}")
+                    Debug.WriteLine($"Zone: {ZoneNames(zoneStatus.ZoneNumber)} Power State: {zoneStatus.ZonePowerState} Control Method: {zoneStatus.ControlMethod} Open: {zoneStatus.OpenPercentage}% Set Point: {zoneStatus.SetPoint} Temperature: {zoneStatus.Temperature} Spill: {zoneStatus.Spill} Sensor: {zoneStatus.Sensor} Battery: {zoneStatus.Battery}")
                     index += 8 ' next zone
                 End While
             Next
@@ -438,4 +505,52 @@ Public Class Form1
             Debug.WriteLine("Error: " & ex.Message)
         End Try
     End Sub
+
+    Private Sub ACAbilityToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ACAbilityToolStripMenuItem.Click
+        Dim requestData() As Byte = CreateMessage(MessageType.Extended, {&HFF, &H11})
+        Dim acData As ACability     '  raw AC data
+        Dim acRawData(28) As Byte     ' 29 bytes of raw AC data
+
+        Try
+            Dim response As Byte() = TcpClientWithTimeout.SendAndReceiveBytes(AirTouch5Console.IP, AirTouchPort, requestData)
+            Dim messages = ParseMessages(response)
+            For Each msg In messages
+                Dim m = Message.Parse(msg)
+                Array.Copy(m.data, 2, acRawData, 0, m.data.Length - 2) ' copy raw AC data
+                acData = ACability.Parse(acRawData) ' parse AC data
+                Debug.WriteLine($"AC #: {acData.ACnumber} AC name: {acData.ACName} Start Zone: {acData.StartZone} Zone count: {acData.ZoneCount} Min Cool: {acData.MinCoolSetPoint} Max Cool: {acData.MaxCoolSetPoint} Min Heat: {acData.MinHeatSetPoint} Max Heat: {acData.MaxHeatSetPoint}")
+                Debug.WriteLine($"Modes: Cool: {acData.CoolMode} Fan: {acData.FanMode} Dry: {acData.DryMode} Heat: {acData.HeatMode} Auto: {acData.AutoMode}")
+                Debug.WriteLine($"Fan Speeds: IA: {acData.FanSpeedIA} Turbo: {acData.FanSpeedTurbo} Powerful: {acData.FanSpeedPowerful} High: {acData.FanSpeedHigh} Medium: {acData.FanSpeedMedium} Low: {acData.FanSpeedLow} Quiet: {acData.FanSpeedQuiet} Auto: {acData.FanspeedAuto}")
+            Next
+        Catch ex As TimeoutException
+            Debug.WriteLine("Request timed out")
+        Catch ex As Exception
+            Debug.WriteLine("Error: " & ex.Message)
+        End Try
+    End Sub
+    Public Shared Function GetNullTerminatedString(bytes As Byte(), maxLength As Integer) As String
+        ' Validate input
+        If bytes Is Nothing OrElse bytes.Length = 0 Then Return String.Empty
+
+        ' Ensure maxLength doesn't exceed array bounds
+        Dim searchLength As Integer = Math.Min(bytes.Length, maxLength)
+
+        ' Find null terminator within the search range
+        Dim nullIndex As Integer = -1
+        For i As Integer = 0 To searchLength - 1
+            If bytes(i) = 0 Then
+                nullIndex = i
+                Exit For
+            End If
+        Next
+
+        ' Determine the actual length to extract
+        Dim stringLength As Integer = If(nullIndex >= 0, nullIndex, searchLength)
+
+        ' Handle empty string case
+        If stringLength = 0 Then Return String.Empty
+
+        ' Extract the string
+        Return Encoding.ASCII.GetString(bytes, 0, stringLength)
+    End Function
 End Class

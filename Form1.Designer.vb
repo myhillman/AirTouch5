@@ -27,12 +27,13 @@ Partial Class Form1
         GetVersionToolStripMenuItem = New ToolStripMenuItem()
         GetZonesToolStripMenuItem = New ToolStripMenuItem()
         ZoneStatusToolStripMenuItem = New ToolStripMenuItem()
+        ACAbilityToolStripMenuItem = New ToolStripMenuItem()
         MenuStrip1.SuspendLayout()
         SuspendLayout()
         ' 
         ' MenuStrip1
         ' 
-        MenuStrip1.Items.AddRange(New ToolStripItem() {FindControllerToolStripMenuItem, GetVersionToolStripMenuItem, GetZonesToolStripMenuItem, ZoneStatusToolStripMenuItem})
+        MenuStrip1.Items.AddRange(New ToolStripItem() {FindControllerToolStripMenuItem, GetVersionToolStripMenuItem, GetZonesToolStripMenuItem, ZoneStatusToolStripMenuItem, ACAbilityToolStripMenuItem})
         MenuStrip1.Location = New Point(0, 0)
         MenuStrip1.Name = "MenuStrip1"
         MenuStrip1.Size = New Size(800, 24)
@@ -63,6 +64,12 @@ Partial Class Form1
         ZoneStatusToolStripMenuItem.Size = New Size(81, 20)
         ZoneStatusToolStripMenuItem.Text = "Zone Status"
         ' 
+        ' ACAbilityToolStripMenuItem
+        ' 
+        ACAbilityToolStripMenuItem.Name = "ACAbilityToolStripMenuItem"
+        ACAbilityToolStripMenuItem.Size = New Size(70, 20)
+        ACAbilityToolStripMenuItem.Text = "AC ability"
+        ' 
         ' Form1
         ' 
         AutoScaleDimensions = New SizeF(7F, 15F)
@@ -83,5 +90,6 @@ Partial Class Form1
     Friend WithEvents GetVersionToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents GetZonesToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ZoneStatusToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ACAbilityToolStripMenuItem As ToolStripMenuItem
 
 End Class
