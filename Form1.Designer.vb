@@ -24,12 +24,15 @@ Partial Class Form1
     Private Sub InitializeComponent()
         MenuStrip1 = New MenuStrip()
         FindControllerToolStripMenuItem = New ToolStripMenuItem()
+        GetVersionToolStripMenuItem = New ToolStripMenuItem()
+        GetZonesToolStripMenuItem = New ToolStripMenuItem()
+        ZoneStatusToolStripMenuItem = New ToolStripMenuItem()
         MenuStrip1.SuspendLayout()
         SuspendLayout()
         ' 
         ' MenuStrip1
         ' 
-        MenuStrip1.Items.AddRange(New ToolStripItem() {FindControllerToolStripMenuItem})
+        MenuStrip1.Items.AddRange(New ToolStripItem() {FindControllerToolStripMenuItem, GetVersionToolStripMenuItem, GetZonesToolStripMenuItem, ZoneStatusToolStripMenuItem})
         MenuStrip1.Location = New Point(0, 0)
         MenuStrip1.Name = "MenuStrip1"
         MenuStrip1.Size = New Size(800, 24)
@@ -41,6 +44,24 @@ Partial Class Form1
         FindControllerToolStripMenuItem.Name = "FindControllerToolStripMenuItem"
         FindControllerToolStripMenuItem.Size = New Size(98, 20)
         FindControllerToolStripMenuItem.Text = "Find Controller"
+        ' 
+        ' GetVersionToolStripMenuItem
+        ' 
+        GetVersionToolStripMenuItem.Name = "GetVersionToolStripMenuItem"
+        GetVersionToolStripMenuItem.Size = New Size(78, 20)
+        GetVersionToolStripMenuItem.Text = "Get Version"
+        ' 
+        ' GetZonesToolStripMenuItem
+        ' 
+        GetZonesToolStripMenuItem.Name = "GetZonesToolStripMenuItem"
+        GetZonesToolStripMenuItem.Size = New Size(72, 20)
+        GetZonesToolStripMenuItem.Text = "Get Zones"
+        ' 
+        ' ZoneStatusToolStripMenuItem
+        ' 
+        ZoneStatusToolStripMenuItem.Name = "ZoneStatusToolStripMenuItem"
+        ZoneStatusToolStripMenuItem.Size = New Size(81, 20)
+        ZoneStatusToolStripMenuItem.Text = "Zone Status"
         ' 
         ' Form1
         ' 
@@ -59,5 +80,8 @@ Partial Class Form1
 
     Friend WithEvents MenuStrip1 As MenuStrip
     Friend WithEvents FindControllerToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents GetVersionToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents GetZonesToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ZoneStatusToolStripMenuItem As ToolStripMenuItem
 
 End Class
