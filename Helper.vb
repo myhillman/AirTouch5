@@ -2,7 +2,6 @@
 Imports System.Net.Sockets
 Imports System.Text
 Imports System.Threading
-
 Public Class TcpClientWithTimeout
     Public Shared Function SendAndReceive(
         host As String,

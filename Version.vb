@@ -10,7 +10,7 @@
 ' ==============================================================
 Module Version
     ' Public variable to store the retrieved version string
-    Public Version As String = String.Empty
+    Public VersionTxt As String = String.Empty
 
     ' Method: GetVersion
     ' Purpose: Retrieves the console version from the AirTouch system
@@ -48,10 +48,10 @@ Module Version
                 ' Extract version string:
                 ' - m.data(3) contains version string length
                 ' - Version starts at m.data(4)
-                Version = Encoding.UTF8.GetString(m.data, 4, m.data(3))
+                VersionTxt = Encoding.UTF8.GetString(m.data, 4, m.data(3))
 
                 ' Output version to debug
-                Debug.WriteLine("Console Version: " & Version)
+                Debug.WriteLine("Console Version: " & VersionTxt)
             Next
 
         Catch ex As TimeoutException

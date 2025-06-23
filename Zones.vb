@@ -58,7 +58,7 @@ Module Zones
         Public ZonePowerState As ZonePowerStateEnum ' Current power state
         Public ZoneNumber As Byte                   ' Zone number (0-15)
         Public ControlMethod As ControlMethodEnum   ' Current control method
-        Public Open As Byte                         ' Percentage open (0-100%)
+        Public DamperOpen As Byte                   ' Percentage open (0-100%)
         Public SetPoint As Short                    ' Temperature set point
         Public Sensor As SensorStatusEnum           ' Sensor presence status
         Public Temperature As Short                 ' Current temperature
@@ -69,17 +69,17 @@ Module Zones
         ' Purpose: Converts raw byte data into ZoneStatusMessage structure
         ' Parameters:
         '   data - Byte array containing zone status information
-        Public Shared Function Parse(data As Byte()) As ZoneStatusMessage
+        Public Shared Function Parse(data As Byte(), index As Integer) As ZoneStatusMessage
             Return New ZoneStatusMessage With {
-                .ZonePowerState = CType((data(0) >> 6) And &H3, ZonePowerStateEnum),
-                .ZoneNumber = data(0) And &HF,
-                .ControlMethod = CType((data(1) >> 7) And &H1, ControlMethodEnum),
-                .Open = data(1) And &H7F,
-                .SetPoint = (data(2) + 100) / 10,
-                .Sensor = CType(data(3) >> 7 And &H1, SensorStatusEnum),
-                .Temperature = (((CInt(data(4)) << 8) Or data(5)) - 500) / 10,
-                .Spill = CType((data(6) >> 1) And 1, SpillStatusEnum),
-                .Battery = CType((data(6) And &H1), BatteryStatusEnum)
+                .ZonePowerState = CType((data(index) >> 6) And &H3, ZonePowerStateEnum),
+                .ZoneNumber = data(index) And &HF,
+                .ControlMethod = CType((data(index + 1) >> 7) And &H1, ControlMethodEnum),
+                .DamperOpen = data(index + 1) And &H7F,
+                .SetPoint = (data(index + 2) + 100) / 10,
+                .Sensor = CType(data(index + 3) >> 7 And &H1, SensorStatusEnum),
+                .Temperature = (((CInt(data(index + 4) And &H7) << 8) Or data(index + 5)) - 500) / 10,
+                .Spill = CType((data(index + 6) >> 1) And 1, SpillStatusEnum),
+                .Battery = CType((data(index + 6) And &H1), BatteryStatusEnum)
             }
         End Function
     End Structure
@@ -139,7 +139,6 @@ Module Zones
     Public Sub GetZoneStatus()
         ' Create control request message (command byte 21)
         Dim requestData() As Byte = CreateMessage(MessageType.Control, {&H21, 0, 0, 0, 0, 0, 0, 0})
-        Dim zoneData(7) As Byte ' Buffer for raw zone data (8 bytes per zone)
         Dim zoneStatus As ZoneStatusMessage
 
         Try
@@ -156,11 +155,9 @@ Module Zones
 
                 ' Process each zone status entry
                 While index < m.data.Length - 1
-                    ' Copy 8 bytes of zone data
-                    Array.Copy(m.data, index, zoneData, 0, 8)
 
                     ' Parse zone status
-                    zoneStatus = ZoneStatusMessage.Parse(zoneData)
+                    zoneStatus = ZoneStatusMessage.Parse(m.data, index)
 
                     ' Store in dictionary
                     ZoneStatuses(zoneStatus.ZoneNumber) = zoneStatus
@@ -170,13 +167,12 @@ Module Zones
                         $"Zone: {ZoneNames(zoneStatus.ZoneNumber)} " &
                         $"Power State: {zoneStatus.ZonePowerState} " &
                         $"Control Method: {zoneStatus.ControlMethod} " &
-                        $"Open: {zoneStatus.Open}% " &
+                        $"Damper Open: {zoneStatus.DamperOpen}% " &
                         $"Set Point: {zoneStatus.SetPoint} " &
                         $"Temperature: {zoneStatus.Temperature} " &
                         $"Spill: {zoneStatus.Spill} " &
                         $"Sensor: {zoneStatus.Sensor} " &
                         $"Battery: {zoneStatus.Battery}")
-
                     ' Move to next zone status entry
                     index += 8
                 End While

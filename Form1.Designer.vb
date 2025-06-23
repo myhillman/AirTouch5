@@ -28,12 +28,14 @@ Partial Class Form1
         GetZonesToolStripMenuItem = New ToolStripMenuItem()
         ZoneStatusToolStripMenuItem = New ToolStripMenuItem()
         ACAbilityToolStripMenuItem = New ToolStripMenuItem()
+        ACStatusToolStripMenuItem = New ToolStripMenuItem()
+        SnapshotToolStripMenuItem = New ToolStripMenuItem()
         MenuStrip1.SuspendLayout()
         SuspendLayout()
         ' 
         ' MenuStrip1
         ' 
-        MenuStrip1.Items.AddRange(New ToolStripItem() {FindControllerToolStripMenuItem, GetVersionToolStripMenuItem, GetZonesToolStripMenuItem, ZoneStatusToolStripMenuItem, ACAbilityToolStripMenuItem})
+        MenuStrip1.Items.AddRange(New ToolStripItem() {FindControllerToolStripMenuItem, GetVersionToolStripMenuItem, GetZonesToolStripMenuItem, ZoneStatusToolStripMenuItem, ACAbilityToolStripMenuItem, ACStatusToolStripMenuItem, SnapshotToolStripMenuItem})
         MenuStrip1.Location = New Point(0, 0)
         MenuStrip1.Name = "MenuStrip1"
         MenuStrip1.Size = New Size(800, 24)
@@ -70,6 +72,18 @@ Partial Class Form1
         ACAbilityToolStripMenuItem.Size = New Size(70, 20)
         ACAbilityToolStripMenuItem.Text = "AC ability"
         ' 
+        ' ACStatusToolStripMenuItem
+        ' 
+        ACStatusToolStripMenuItem.Name = "ACStatusToolStripMenuItem"
+        ACStatusToolStripMenuItem.Size = New Size(69, 20)
+        ACStatusToolStripMenuItem.Text = "AC status"
+        ' 
+        ' SnapshotToolStripMenuItem
+        ' 
+        SnapshotToolStripMenuItem.Name = "SnapshotToolStripMenuItem"
+        SnapshotToolStripMenuItem.Size = New Size(68, 20)
+        SnapshotToolStripMenuItem.Text = "Snapshot"
+        ' 
         ' Form1
         ' 
         AutoScaleDimensions = New SizeF(7F, 15F)
@@ -91,5 +105,7 @@ Partial Class Form1
     Friend WithEvents GetZonesToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ZoneStatusToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ACAbilityToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ACStatusToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents SnapshotToolStripMenuItem As ToolStripMenuItem
 
 End Class

@@ -19,7 +19,7 @@ Module ACability
 
     ' Structure: ACability
     ' Purpose: Contains all capability information for an AC unit
-    Private Structure ACability
+    Public Structure ACability
         ' Basic identification
         Dim ACnumber As Byte         ' AC unit number
         Dim ACName As String         ' Name of AC unit (max 16 chars)
@@ -57,14 +57,14 @@ Module ACability
         '   data - Byte array containing AC capability information
         ' Returns:
         '   ACability structure populated with parsed data
-        Public Shared Function Parse(data As Byte()) As ACability
+        Public Shared Function Parse(data As Byte(), index As Integer) As ACability
             ' Extract AC name (16 bytes null-terminated)
             Dim name(15) As Byte
-            Array.Copy(data, 2, name, 0, 16)
+            Array.Copy(data, index + 2, name, 0, 16)
             Dim ACname As String = GetNullTerminatedString(name, 16)
 
             ' Parse supported features bitmask (bits 20-21)
-            Dim SupportedMasks = CInt(data(20)) << 8 Or data(21)
+            Dim SupportedMasks = CInt(data(index + 20)) << 8 Or data(index + 21)
 
             ' Convert bitmask to list of SupportedEnum values
             Dim SupportedList As New List(Of SupportedEnum)
@@ -78,10 +78,10 @@ Module ACability
 
             ' Create and return populated structure
             Return New ACability With {
-                .ACnumber = data(0),
+                .ACnumber = data(index),
                 .ACName = ACname,
-                .StartZone = data(18),
-                .ZoneCount = data(19),
+                .StartZone = data(index + 18),
+                .ZoneCount = data(index + 19),
                 .CoolMode = SupportedList(0),
                 .FanMode = SupportedList(1),
                 .DryMode = SupportedList(2),
@@ -95,13 +95,14 @@ Module ACability
                 .FanSpeedLow = SupportedList(10),
                 .FanSpeedQuiet = SupportedList(11),
                 .FanspeedAuto = SupportedList(12),
-                .MinCoolSetPoint = data(22),
-                .MaxCoolSetPoint = data(23),
-                .MinHeatSetPoint = data(24),
-                .MaxHeatSetPoint = data(25)
+                .MinCoolSetPoint = data(index + 22),
+                .MaxCoolSetPoint = data(index + 23),
+                .MinHeatSetPoint = data(index + 24),
+                .MaxHeatSetPoint = data(index + 25)
             }
         End Function
     End Structure
+    Public acData As ACability      ' Parsed AC capability data
 
     ' Method: GetACability
     ' Purpose: Retrieves AC capability information from AirTouch console
@@ -112,8 +113,7 @@ Module ACability
     Public Sub GetACability()
         ' Create extended message requesting AC capabilities
         Dim requestData() As Byte = CreateMessage(MessageType.Extended, {&HFF, &H11})
-        Dim acData As ACability      ' Parsed AC capability data
-        Dim acRawData(28) As Byte    ' Buffer for raw AC data (29 bytes)
+
         If Not AirTouch5Console.Connected Then Throw New System.Exception("Console not connected. Cannot retrieve AC ability.")
         Try
             ' Send request and receive response
@@ -126,10 +126,9 @@ Module ACability
             For Each msg In messages
                 ' Parse message and extract AC data
                 Dim m = Message.Parse(msg)
-                Array.Copy(m.data, 2, acRawData, 0, m.data.Length - 2)
 
                 ' Parse raw data into structured format
-                acData = ACability.Parse(acRawData)
+                acData = ACability.Parse(m.data, 2)
 
                 ' Output basic AC information
                 Debug.WriteLine(
