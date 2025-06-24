@@ -1,9 +1,17 @@
 ﻿Imports System.IO
-
-Module Snapshot
+Imports System.Windows.Forms.VisualStyles.VisualStyleElement.Tab
+''' <summary>
+''' Module Snapshot
+''' Purpose: Generates a snapshot of the AirTouch A/C system status and capabilities
+''' Features:
+''' - Creates an HTML report with A/C ability, status, and zone information
+''' - Formats data in a single-line table for clarity
+''' - Opens the generated report in the default web browser
+''' </summary>
+Friend Module Snapshot
     Sub MakeSnapshot()
         ' Define the HTML file path where the snapshot will be saved
-        Dim filePath As String = "ACSummary.html"
+        Dim filePath As String = $"ACSummary_{Now:yyyyMMdd_HHmmss}.html"
 
         ' Create and write HTML content to file using StreamWriter
         Using writer As New StreamWriter(filePath)
@@ -14,7 +22,13 @@ Module Snapshot
                        "<title>A/C Snapshot</title>" & vbCrLf &
                        "<style>" & vbCrLf &
                        "        table.single-line { border-collapse: collapse; }" & vbCrLf &
-                       "        table.single-line th, table.single-line td { border: 1px solid black; padding: 2px; }" & vbCrLf &
+                       "        table.single-line th, table.single-line td { border: 1px solid black; padding: 2px; text-align: center; }" & vbCrLf &
+                       "    html, body {" & vbCrLf &
+                        "   Font-family: Arial, Helvetica, sans-serif;" & vbCrLf &
+                        "   Font-Size:  10pt;" & vbCrLf &
+                        "   line-height:   1.5;" & vbCrLf &
+                        "   -webkit-font-smoothing: antialiased;" & vbCrLf &
+                        "   Text-rendering: optimizeLegibility; }" & vbCrLf &
                        "</style>" & vbCrLf &
                        "</head>" & vbCrLf &
                        "<body>" & vbCrLf)
@@ -22,7 +36,7 @@ Module Snapshot
             ' Write report header with timestamp and system information
             writer.WriteLine("<h1>AirTouch A/C Summary</h1>" & vbCrLf)
             writer.WriteLine($"Snapshot taken at: {DateTime.Now:yyyy-MM-dd HH:mm:ss}<br>{vbCrLf}")
-            writer.WriteLine($"<p>Console: ID={AirTouch5Console.ConsoleID} ID={AirTouch5Console.AirTouchID} IP={AirTouch5Console.IP} Version={VersionTxt}</p>{vbCrLf}")
+            writer.WriteLine($"<p>Console: ID={AirTouch5Console.ConsoleID} System ID={AirTouch5Console.AirTouchID} IP={AirTouch5Console.IP} Version={VersionInfo.VersionText} ({If(VersionInfo.UpdateSign = 0, "Latest", "Update")})</p>{vbCrLf}")
             writer.WriteLine($"Installed address: 28 Murndal Drive, Donvale. Vic 3111.  Contact Marc Hillman 0432 686 808{vbCrLf}")
 
             ' ========== A/C Ability Section ==========
@@ -45,10 +59,10 @@ Module Snapshot
 
             ' Write column headers for A/C Ability table
             writer.WriteLine("<tr>" &
-                            "<th>AC number</th>" &
+                            "<th>AC<br>number</th>" &
                             "<th>AC name</th>" &
-                            "<th>Start Zone</th>" &
-                            "<th>Zone Count</th>" &
+                            "<th>Start<br>Zone</th>" &
+                            "<th>Zone<br>Count</th>" &
                             "<th>Cool</th>" &
                             "<th>Fan</th>" &
                             "<th>Dry</th>" &
@@ -98,24 +112,35 @@ Module Snapshot
             writer.WriteLine("<h2>A/C Status</h2>" & vbCrLf)
             writer.WriteLine("<table class='single-line'>" & vbCrLf &
                        "<tr>" &
-                       "<th>Power State</th>" &
+                       "<th>AC Power</th>" &
                        "<th>Number</th>" &
                        "<th>Mode</th>" &
                        "<th>Fan Speed</th>" &
                        "<th>Set Point</th>" &
                        "<th>Temperature</th>" &
+                       "<th>Turbo</th>" &
+                       "<th>Bypass</th>" &
+                       "<th>Spill</th>" &
+                       "<th>Timer</th>" &
+                       "<th>Defrost</th>" &
                        "</tr>" & vbCrLf)
 
             ' Write A/C Status data row
             writer.WriteLine("<tr>" & vbCrLf &
-                       "<td>" & acStatusMsg.PowerState.ToString() & "</td>" &
+                       "<td>" & acStatusMsg.ACPower.ToString() & "</td>" &
                        "<td>" & acStatusMsg.Number.ToString() & "</td>" &
                        "<td>" & acStatusMsg.Mode.ToString() & "</td>" &
                        "<td>" & acStatusMsg.FanSpeed.ToString() & "</td>" &
                        "<td>" & acStatusMsg.SetPoint.ToString() & "</td>" &
                        "<td>" & acStatusMsg.Temperature.ToString() & "</td>" &
+                       "<td>" & acStatusMsg.Turbo.ToString() & "</td>" &
+                       "<td>" & acStatusMsg.Bypass.ToString() & "</td>" &
+                       "<td>" & acStatusMsg.Spill.ToString() & "</td>" &
+                       "<td>" & acStatusMsg.TimerSet.ToString() & "</td>" &
+                       "<td>" & acStatusMsg.Defrost.ToString() & "</td>" &
                        "</tr>" & vbCrLf)
             writer.WriteLine("</table>" & vbCrLf)
+            writer.WriteLine("<p>Note: Turbo & Timer seem to be reporting incorrectly</p>")
 
             ' ========== Zones Section ==========
             writer.WriteLine("<h2>Zones</h2>" & vbCrLf)
@@ -125,8 +150,10 @@ Module Snapshot
                        "<th>Zone Name</th>" &
                        "<th>Power</th>" &
                        "<th>Control<br>Method</th>" &
+                       "<th>Damper<br>Open %</th>" &
                        "<th>Set<br>Point</th>" &
                        "<th>Temperature</th>" &
+                       "<th>Sensor</th>" &
                        "<th>Spill</th>" &
                        "<th>Battery</th>" &
                        "</tr>" & vbCrLf)
@@ -137,11 +164,12 @@ Module Snapshot
                 writer.WriteLine("<tr>" & vbCrLf &
                            "<td>" & zoneStatus.ZoneNumber.ToString() & "</td>" &
                            "<td>" & ZoneNames(zoneStatus.ZoneNumber) & "</td>" &
-                           "<td>" & zoneStatus.ZonePowerState.ToString() & "</td>" &
+                           "<td>" & zoneStatus.ZoneState.ToString() & "</td>" &
                            "<td>" & zoneStatus.ControlMethod.ToString() & "</td>" &
                            "<td>" & zoneStatus.DamperOpen.ToString() & "</td>" &
                            "<td>" & zoneStatus.SetPoint.ToString() & "</td>" &
                            "<td>" & zoneStatus.Temperature.ToString() & "</td>" &
+                           "<td>" & zoneStatus.Sensor.ToString() & "</td>" &
                            "<td>" & zoneStatus.Spill.ToString() & "</td>" &
                            "<td>" & zoneStatus.Battery.ToString() & "</td>" &
                            "</tr>" & vbCrLf)

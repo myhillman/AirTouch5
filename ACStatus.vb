@@ -1,5 +1,9 @@
-﻿Module ACStatus
-    Enum PowerStateEnum
+﻿Friend Module ACStatus
+    ''' <summary>
+    ''' Module: ACStatus
+    ''' Purpose: Contains structures and methods to retrieve and parse AC status information from the AirTouch 5 console.
+    ''' </summary>
+    Enum ACPowerEnum
         Off = 0
         [On] = 1
         OffAlways = 2
@@ -8,21 +12,21 @@
     End Enum
     Enum ModeEnum
         Auto = 0
-        Cool = 4
-        Fan = 3
-        Dry = 2
         Heat = 1
+        Dry = 2
+        Fan = 3
+        Cool = 4
         AutoHeat = 8
         AuroCool = 9
     End Enum
     Enum FanSpeedEnum
         Auto = 0
-        Turbo = 6
-        Powerful = 5
-        High = 4
-        Medium = 3
-        Low = 2
         Quiet = 1
+        Low = 2
+        Medium = 3
+        High = 4
+        Powerful = 5
+        Turbo = 6
         IA1 = 9
         IA2 = 10
         IA3 = 11
@@ -38,34 +42,40 @@
     ' Purpose: Contains all capability information for an AC unit
     Public Structure ACStatusMessage
         ' Basic identification
-        Dim PowerState As PowerStateEnum
+        Dim ACPower As ACPowerEnum
         Dim Number As Byte
         Dim Mode As ModeEnum
         Dim FanSpeed As FanSpeedEnum
         Dim SetPoint As Byte
-        Dim TurboActive As ActiveEnum
-        Dim BypassActive As ActiveEnum
-        Dim SpillActive As ActiveEnum
+        Dim Turbo As ActiveEnum
+        Dim Bypass As ActiveEnum
+        Dim Spill As ActiveEnum
         Dim TimerSet As ActiveEnum
         Dim Defrost As ActiveEnum
-        Dim Temperature As Short
+        Dim Temperature As Single
         Dim ErrorCode As Short
 
         ' Method: Parse
         Public Shared Function Parse(data As Byte(), index As Integer) As ACStatusMessage
+            ' Read Byte4 and 5 as 16 bit array
+            Dim twoBytes(1) As Byte
+            Array.Copy(data, index + 3, twoBytes, 0, 2)    ' copy 2 bytes of masks
+            Array.Reverse(twoBytes)        ' reverse them to match big-endian format
+
+            Dim bitArray As New BitArray(twoBytes)          ' create a bitarray with them
             ' Create and return populated structure
             Return New ACStatusMessage With {
-                .PowerState = CType((data(index) >> 4) And &HF, PowerStateEnum),
+                .ACPower = CType((data(index) >> 4) And &HF, ACPowerEnum),
                 .Number = data(index) And &HF,
                 .Mode = CType((data(index + 1) >> 4) And &HF, ModeEnum),
                 .FanSpeed = CType(data(index + 1) And &HF, FanSpeedEnum),
                 .SetPoint = (data(index + 2) + 100) / 10,
-                .TurboActive = CType((data(index + 3) >> 3) And &H1, ActiveEnum),
-                .BypassActive = CType((data(index + 3) >> 2) And &H1, ActiveEnum),
-                .SpillActive = CType((data(index + 3) >> 1) And &H1, ActiveEnum),
-                .TimerSet = CType(data(index + 3) And &H1, ActiveEnum),
-                .Defrost = CType((data(index + 4) >> 5) And &H3, ActiveEnum),
-                .Temperature = (((CInt(data(index + 4) And &H7) << 8) Or data(index + 5)) - 500) / 10,
+                .Turbo = If(bitArray(11), ActiveEnum.Active, ActiveEnum.InActive),
+                .Bypass = If(bitArray(10), ActiveEnum.Active, ActiveEnum.InActive),
+                .Spill = If(bitArray(9), ActiveEnum.Active, ActiveEnum.InActive),
+                .TimerSet = If(bitArray(8), ActiveEnum.Active, ActiveEnum.InActive),
+                .Defrost = If(bitArray(4), ActiveEnum.Active, ActiveEnum.InActive),
+                .Temperature = (((CInt(data(index + 4) And &H7) << 8) Or data(index + 5)) - 500) / 10.0,
                 .ErrorCode = (CInt(data(index + 6)) << 8) Or data(index + 7)
             }
         End Function
@@ -92,14 +102,14 @@
 
                 ' Output AC status information
                 Debug.WriteLine(
-                    $"Power: {acStatusMsg.PowerState} " &
+                    $"Power: {acStatusMsg.ACPower} " &
                     $"AC #: {acStatusMsg.Number} " &
                     $"Mode: {acStatusMsg.Mode} " &
                     $"Fan Speed: {acStatusMsg.FanSpeed} " &
                     $"Setpoint: {acStatusMsg.SetPoint} " &
-                    $"Turbo: {acStatusMsg.TurboActive} " &
-                    $"Bypass: {acStatusMsg.BypassActive} " &
-                    $"Spill: {acStatusMsg.SpillActive} " &
+                    $"Turbo: {acStatusMsg.Turbo} " &
+                    $"Bypass: {acStatusMsg.Bypass} " &
+                    $"Spill: {acStatusMsg.Spill} " &
                     $"Temperature: {acStatusMsg.Temperature} " &
                     $"Defrost: {acStatusMsg.Defrost} " &
                     $"Error Code: {acStatusMsg.ErrorCode} ")
@@ -109,5 +119,6 @@
         Catch ex As Exception
             Debug.WriteLine("Error: " & ex.Message)
         End Try
+        Form1.TextBox1.AppendText($"Retrieved AC status information.{vbCrLf}")
     End Sub
 End Module

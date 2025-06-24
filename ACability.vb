@@ -8,7 +8,7 @@
 ' - Parses raw AC capability data from AirTouch console
 ' - Provides methods to retrieve and display AC capabilities
 ' ==============================================================
-Module ACability
+Friend Module ACability
 
     ' Enum: SupportedEnum
     ' Purpose: Simple boolean-like enum for supported features
@@ -64,17 +64,10 @@ Module ACability
             Dim ACname As String = GetNullTerminatedString(name, 16)
 
             ' Parse supported features bitmask (bits 20-21)
-            Dim SupportedMasks = CInt(data(index + 20)) << 8 Or data(index + 21)
-
-            ' Convert bitmask to list of SupportedEnum values
-            Dim SupportedList As New List(Of SupportedEnum)
-            For i = 1 To 13
-                ' Check each bit (LSB first)
-                Dim support = CType(SupportedMasks And 1, SupportedEnum)
-                SupportedList.Add(support)
-                SupportedMasks >>= 1 ' Move to next bit
-            Next
-            SupportedList.Reverse() ' Reverse to match original bit order
+            Dim twoBytes(1) As Byte
+            Array.Copy(data, index + 20, twoBytes, 0, 2)    ' copy 2 bytes of masks
+            Array.Reverse(twoBytes)        ' reverse them to match big-endian format
+            Dim bitArray As New BitArray(twoBytes)          ' create a bitarray with them
 
             ' Create and return populated structure
             Return New ACability With {
@@ -82,19 +75,19 @@ Module ACability
                 .ACName = ACname,
                 .StartZone = data(index + 18),
                 .ZoneCount = data(index + 19),
-                .CoolMode = SupportedList(0),
-                .FanMode = SupportedList(1),
-                .DryMode = SupportedList(2),
-                .HeatMode = SupportedList(3),
-                .AutoMode = SupportedList(4),
-                .FanSpeedIA = SupportedList(5),
-                .FanSpeedTurbo = SupportedList(6),
-                .FanSpeedPowerful = SupportedList(7),
-                .FanSpeedHigh = SupportedList(8),
-                .FanSpeedMedium = SupportedList(9),
-                .FanSpeedLow = SupportedList(10),
-                .FanSpeedQuiet = SupportedList(11),
-                .FanspeedAuto = SupportedList(12),
+                .CoolMode = If(bitArray(12), SupportedEnum.Yes, SupportedEnum.No),
+                .FanMode = If(bitArray(11), SupportedEnum.Yes, SupportedEnum.No),
+                .DryMode = If(bitArray(10), SupportedEnum.Yes, SupportedEnum.No),
+                .HeatMode = If(bitArray(9), SupportedEnum.Yes, SupportedEnum.No),
+                .AutoMode = If(bitArray(8), SupportedEnum.Yes, SupportedEnum.No),
+                .FanSpeedIA = If(bitArray(7), SupportedEnum.Yes, SupportedEnum.No),
+                .FanSpeedTurbo = If(bitArray(6), SupportedEnum.Yes, SupportedEnum.No),
+                .FanSpeedPowerful = If(bitArray(5), SupportedEnum.Yes, SupportedEnum.No),
+                .FanSpeedHigh = If(bitArray(4), SupportedEnum.Yes, SupportedEnum.No),
+                .FanSpeedMedium = If(bitArray(3), SupportedEnum.Yes, SupportedEnum.No),
+                .FanSpeedLow = If(bitArray(2), SupportedEnum.Yes, SupportedEnum.No),
+                .FanSpeedQuiet = If(bitArray(1), SupportedEnum.Yes, SupportedEnum.No),
+                .FanspeedAuto = If(bitArray(0), SupportedEnum.Yes, SupportedEnum.No),
                 .MinCoolSetPoint = data(index + 22),
                 .MaxCoolSetPoint = data(index + 23),
                 .MinHeatSetPoint = data(index + 24),
@@ -165,6 +158,7 @@ Module ACability
         Catch ex As Exception
             Debug.WriteLine("Error: " & ex.Message)
         End Try
+        Form1.TextBox1.AppendText($"Retrieved AC ability information.{vbCrLf}")
     End Sub
 
     ' Method: GetNullTerminatedString

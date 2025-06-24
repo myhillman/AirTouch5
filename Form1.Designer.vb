@@ -24,18 +24,20 @@ Partial Class Form1
     Private Sub InitializeComponent()
         MenuStrip1 = New MenuStrip()
         FindControllerToolStripMenuItem = New ToolStripMenuItem()
-        GetVersionToolStripMenuItem = New ToolStripMenuItem()
+        RefreshDataToolStripMenuItem = New ToolStripMenuItem()
+        SnapshotToolStripMenuItem = New ToolStripMenuItem()
+        TextBox1 = New TextBox()
         GetZonesToolStripMenuItem = New ToolStripMenuItem()
         ZoneStatusToolStripMenuItem = New ToolStripMenuItem()
         ACAbilityToolStripMenuItem = New ToolStripMenuItem()
         ACStatusToolStripMenuItem = New ToolStripMenuItem()
-        SnapshotToolStripMenuItem = New ToolStripMenuItem()
+        GetVersionToolStripMenuItem = New ToolStripMenuItem()
         MenuStrip1.SuspendLayout()
         SuspendLayout()
         ' 
         ' MenuStrip1
         ' 
-        MenuStrip1.Items.AddRange(New ToolStripItem() {FindControllerToolStripMenuItem, GetVersionToolStripMenuItem, GetZonesToolStripMenuItem, ZoneStatusToolStripMenuItem, ACAbilityToolStripMenuItem, ACStatusToolStripMenuItem, SnapshotToolStripMenuItem})
+        MenuStrip1.Items.AddRange(New ToolStripItem() {FindControllerToolStripMenuItem, RefreshDataToolStripMenuItem, SnapshotToolStripMenuItem})
         MenuStrip1.Location = New Point(0, 0)
         MenuStrip1.Name = "MenuStrip1"
         MenuStrip1.Size = New Size(800, 24)
@@ -44,39 +46,16 @@ Partial Class Form1
         ' 
         ' FindControllerToolStripMenuItem
         ' 
+        FindControllerToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {GetZonesToolStripMenuItem, ZoneStatusToolStripMenuItem, ACAbilityToolStripMenuItem, ACStatusToolStripMenuItem, GetVersionToolStripMenuItem})
         FindControllerToolStripMenuItem.Name = "FindControllerToolStripMenuItem"
         FindControllerToolStripMenuItem.Size = New Size(98, 20)
         FindControllerToolStripMenuItem.Text = "Find Controller"
         ' 
-        ' GetVersionToolStripMenuItem
+        ' RefreshDataToolStripMenuItem
         ' 
-        GetVersionToolStripMenuItem.Name = "GetVersionToolStripMenuItem"
-        GetVersionToolStripMenuItem.Size = New Size(78, 20)
-        GetVersionToolStripMenuItem.Text = "Get Version"
-        ' 
-        ' GetZonesToolStripMenuItem
-        ' 
-        GetZonesToolStripMenuItem.Name = "GetZonesToolStripMenuItem"
-        GetZonesToolStripMenuItem.Size = New Size(72, 20)
-        GetZonesToolStripMenuItem.Text = "Get Zones"
-        ' 
-        ' ZoneStatusToolStripMenuItem
-        ' 
-        ZoneStatusToolStripMenuItem.Name = "ZoneStatusToolStripMenuItem"
-        ZoneStatusToolStripMenuItem.Size = New Size(81, 20)
-        ZoneStatusToolStripMenuItem.Text = "Zone Status"
-        ' 
-        ' ACAbilityToolStripMenuItem
-        ' 
-        ACAbilityToolStripMenuItem.Name = "ACAbilityToolStripMenuItem"
-        ACAbilityToolStripMenuItem.Size = New Size(70, 20)
-        ACAbilityToolStripMenuItem.Text = "AC ability"
-        ' 
-        ' ACStatusToolStripMenuItem
-        ' 
-        ACStatusToolStripMenuItem.Name = "ACStatusToolStripMenuItem"
-        ACStatusToolStripMenuItem.Size = New Size(69, 20)
-        ACStatusToolStripMenuItem.Text = "AC status"
+        RefreshDataToolStripMenuItem.Name = "RefreshDataToolStripMenuItem"
+        RefreshDataToolStripMenuItem.Size = New Size(85, 20)
+        RefreshDataToolStripMenuItem.Text = "Refresh Data"
         ' 
         ' SnapshotToolStripMenuItem
         ' 
@@ -84,11 +63,51 @@ Partial Class Form1
         SnapshotToolStripMenuItem.Size = New Size(68, 20)
         SnapshotToolStripMenuItem.Text = "Snapshot"
         ' 
+        ' TextBox1
+        ' 
+        TextBox1.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
+        TextBox1.Location = New Point(11, 34)
+        TextBox1.Multiline = True
+        TextBox1.Name = "TextBox1"
+        TextBox1.Size = New Size(777, 404)
+        TextBox1.TabIndex = 1
+        ' 
+        ' GetZonesToolStripMenuItem
+        ' 
+        GetZonesToolStripMenuItem.Name = "GetZonesToolStripMenuItem"
+        GetZonesToolStripMenuItem.Size = New Size(180, 22)
+        GetZonesToolStripMenuItem.Text = "Get Zones"
+        ' 
+        ' ZoneStatusToolStripMenuItem
+        ' 
+        ZoneStatusToolStripMenuItem.Name = "ZoneStatusToolStripMenuItem"
+        ZoneStatusToolStripMenuItem.Size = New Size(180, 22)
+        ZoneStatusToolStripMenuItem.Text = "Zone Status"
+        ' 
+        ' ACAbilityToolStripMenuItem
+        ' 
+        ACAbilityToolStripMenuItem.Name = "ACAbilityToolStripMenuItem"
+        ACAbilityToolStripMenuItem.Size = New Size(180, 22)
+        ACAbilityToolStripMenuItem.Text = "AC ability"
+        ' 
+        ' ACStatusToolStripMenuItem
+        ' 
+        ACStatusToolStripMenuItem.Name = "ACStatusToolStripMenuItem"
+        ACStatusToolStripMenuItem.Size = New Size(180, 22)
+        ACStatusToolStripMenuItem.Text = "AC status"
+        ' 
+        ' GetVersionToolStripMenuItem
+        ' 
+        GetVersionToolStripMenuItem.Name = "GetVersionToolStripMenuItem"
+        GetVersionToolStripMenuItem.Size = New Size(180, 22)
+        GetVersionToolStripMenuItem.Text = "Get Version"
+        ' 
         ' Form1
         ' 
         AutoScaleDimensions = New SizeF(7F, 15F)
         AutoScaleMode = AutoScaleMode.Font
         ClientSize = New Size(800, 450)
+        Controls.Add(TextBox1)
         Controls.Add(MenuStrip1)
         MainMenuStrip = MenuStrip1
         Name = "Form1"
@@ -101,11 +120,13 @@ Partial Class Form1
 
     Friend WithEvents MenuStrip1 As MenuStrip
     Friend WithEvents FindControllerToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents GetVersionToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents SnapshotToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents TextBox1 As TextBox
+    Friend WithEvents RefreshDataToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents GetZonesToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ZoneStatusToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ACAbilityToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ACStatusToolStripMenuItem As ToolStripMenuItem
-    Friend WithEvents SnapshotToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents GetVersionToolStripMenuItem As ToolStripMenuItem
 
 End Class

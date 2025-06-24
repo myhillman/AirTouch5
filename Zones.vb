@@ -9,16 +9,16 @@ Imports AirTouch5.Form1
 ' - Provides enums for various zone states and statuses
 ' - Handles communication with AirTouch console to get zone data
 ' ==============================================================
-Module Zones
+Friend Module Zones
     ' Dictionary to store zone names with zone number as key
     Public ZoneNames As New Dictionary(Of Integer, String)
 
     ' Dictionary to store zone statuses with zone number as key
     Public ZoneStatuses As New Dictionary(Of Integer, ZoneStatusMessage)
 
-    ' Enum: ZonePowerStateEnum
+    ' Enum: ZoneStateEnum
     ' Purpose: Defines possible power states for a zone
-    Enum ZonePowerStateEnum
+    Enum ZoneStateEnum
         Off = 0     ' Zone is turned off
         [On] = 1    ' Zone is powered on (On is a reserved word, hence brackets)
         Turbo = 3   ' Zone is in turbo mode
@@ -55,13 +55,13 @@ Module Zones
     ' Structure: ZoneStatusMessage
     ' Purpose: Represents the complete status of a zone
     Public Structure ZoneStatusMessage
-        Public ZonePowerState As ZonePowerStateEnum ' Current power state
+        Public ZoneState As ZoneStateEnum ' Current power state
         Public ZoneNumber As Byte                   ' Zone number (0-15)
         Public ControlMethod As ControlMethodEnum   ' Current control method
         Public DamperOpen As Byte                   ' Percentage open (0-100%)
         Public SetPoint As Short                    ' Temperature set point
         Public Sensor As SensorStatusEnum           ' Sensor presence status
-        Public Temperature As Short                 ' Current temperature
+        Public Temperature As Single                ' Current temperature
         Public Spill As SpillStatusEnum             ' Spill status
         Public Battery As BatteryStatusEnum         ' Battery status
 
@@ -71,13 +71,13 @@ Module Zones
         '   data - Byte array containing zone status information
         Public Shared Function Parse(data As Byte(), index As Integer) As ZoneStatusMessage
             Return New ZoneStatusMessage With {
-                .ZonePowerState = CType((data(index) >> 6) And &H3, ZonePowerStateEnum),
-                .ZoneNumber = data(index) And &HF,
+                .ZoneState = CType((data(index) >> 6) And &H3, ZoneStateEnum),
+                .ZoneNumber = data(index) And &H3F,
                 .ControlMethod = CType((data(index + 1) >> 7) And &H1, ControlMethodEnum),
                 .DamperOpen = data(index + 1) And &H7F,
                 .SetPoint = (data(index + 2) + 100) / 10,
                 .Sensor = CType(data(index + 3) >> 7 And &H1, SensorStatusEnum),
-                .Temperature = (((CInt(data(index + 4) And &H7) << 8) Or data(index + 5)) - 500) / 10,
+                .Temperature = (((CInt(data(index + 4) And &H7) << 8) Or data(index + 5)) - 500) / 10.0,
                 .Spill = CType((data(index + 6) >> 1) And 1, SpillStatusEnum),
                 .Battery = CType((data(index + 6) And &H1), BatteryStatusEnum)
             }
@@ -165,7 +165,7 @@ Module Zones
                     ' Output debug information
                     Debug.WriteLine(
                         $"Zone: {ZoneNames(zoneStatus.ZoneNumber)} " &
-                        $"Power State: {zoneStatus.ZonePowerState} " &
+                        $"Power State: {zoneStatus.ZoneState} " &
                         $"Control Method: {zoneStatus.ControlMethod} " &
                         $"Damper Open: {zoneStatus.DamperOpen}% " &
                         $"Set Point: {zoneStatus.SetPoint} " &
@@ -182,5 +182,6 @@ Module Zones
         Catch ex As Exception
             Debug.WriteLine("Error: " & ex.Message)
         End Try
+        Form1.TextBox1.AppendText("Zone Statuses retrieved successfully." & vbCrLf)
     End Sub
 End Module

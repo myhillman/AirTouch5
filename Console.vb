@@ -2,7 +2,7 @@
 Imports System.Net.Sockets
 Imports System.Text
 
-Module Console
+Friend Module Console
     ' ==============================================================
     ' Module: Console
     ' Purpose: Handles discovery and communication with AirTouch consoles
@@ -83,7 +83,7 @@ Module Console
     ' ==============================================================
 
     Public Async Function DiscoverConsole() As Task(Of Boolean)
-        Debug.WriteLine("Starting discovery...")
+        Form1.TextBox1.AppendText("Starting discovery...")
 
         ' Initialize client if needed
         If udpClient Is Nothing Then
@@ -121,7 +121,7 @@ Module Console
             .DeviceName = decode(4)
             .Connected = True
         End With
-        Debug.WriteLine($"Found AirTouch Console: {AirTouch5Console.DeviceName} at IP {AirTouch5Console.IP}")
+        Form1.TextBox1.AppendText($"Found AirTouch Console: {AirTouch5Console.DeviceName} at IP {AirTouch5Console.IP}{vbCrLf}")
 
         ' Clean up client after use
         If udpClient IsNot Nothing Then

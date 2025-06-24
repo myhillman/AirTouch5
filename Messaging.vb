@@ -9,7 +9,7 @@
 ' - Provides message creation and parsing functions
 ' - Implements custom CRC calculation with special rules
 ' ==============================================================
-Module Messaging
+Friend Module Messaging
 
     ' Enum: MessageType
     ' Purpose: Defines the two main message types

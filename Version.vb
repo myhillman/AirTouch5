@@ -8,10 +8,7 @@
 ' - Parses and stores version string
 ' - Provides debug output of version information
 ' ==============================================================
-Module Version
-    ' Public variable to store the retrieved version string
-    Public VersionTxt As String = String.Empty
-
+Friend Module Version
     ' Method: GetVersion
     ' Purpose: Retrieves the console version from the AirTouch system
     ' Flow:
@@ -22,6 +19,18 @@ Module Version
     ' Error Handling:
     ' - Catches and reports timeout exceptions
     ' - Catches and reports general exceptions
+    Public Structure VersionStruct
+        Dim UpdateSign As Byte
+        Dim VersionText As String
+        Public Shared Function Parse(data As Byte()) As VersionStruct
+            ' Create and return populated structure
+            Return New VersionStruct With {
+                .UpdateSign = data(2),
+                .VersionText = Encoding.UTF8.GetString(data, 4, data(3))
+            }
+        End Function
+    End Structure
+    Public VersionInfo As New VersionStruct
     Public Sub GetVersion()
         ' Create extended message with version request command (FF 30)
         Dim requestData() As Byte = CreateMessage(MessageType.Extended, {&HFF, &H30})
@@ -44,14 +53,10 @@ Module Version
             For Each msg In messages
                 ' Parse message structure
                 Dim m = Message.Parse(msg)
-
-                ' Extract version string:
-                ' - m.data(3) contains version string length
-                ' - Version starts at m.data(4)
-                VersionTxt = Encoding.UTF8.GetString(m.data, 4, m.data(3))
+                VersionInfo = VersionInfo.Parse(m.data)
 
                 ' Output version to debug
-                Debug.WriteLine("Console Version: " & VersionTxt)
+                Debug.WriteLine("Console Version: " & VersionInfo.VersionText)
             Next
 
         Catch ex As TimeoutException
@@ -62,5 +67,6 @@ Module Version
             ' Handle all other exceptions
             Debug.WriteLine("Error: " & ex.Message)
         End Try
+        Form1.TextBox1.AppendText($"Retrieved version information.{vbCrLf}")
     End Sub
 End Module
