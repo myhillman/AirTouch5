@@ -83,29 +83,31 @@ Friend Module Snapshot
                             "</tr>" & vbCrLf)
 
             ' Write A/C Ability data row
-            writer.WriteLine("<tr>" &
-                            "<td>" & acData.ACnumber & "</td>" &
-                            "<td>" & acData.ACName & "</td>" &
-                            "<td>" & acData.StartZone & "</td>" &
-                            "<td>" & acData.ZoneCount & "</td>" &
-                            "<td>" & acData.CoolMode.ToString() & "</td>" &
-                            "<td>" & acData.FanMode.ToString() & "</td>" &
-                            "<td>" & acData.DryMode.ToString() & "</td>" &
-                            "<td>" & acData.HeatMode.ToString() & "</td>" &
-                            "<td>" & acData.AutoMode.ToString() & "</td>" &
-                            "<td>" & acData.FanSpeedIA.ToString() & "</td>" &
-                            "<td>" & acData.FanSpeedTurbo.ToString() & "</td>" &
-                            "<td>" & acData.FanSpeedPowerful.ToString() & "</td>" &
-                            "<td>" & acData.FanSpeedHigh.ToString() & "</td>" &
-                            "<td>" & acData.FanSpeedMedium.ToString() & "</td>" &
-                            "<td>" & acData.FanSpeedLow.ToString() & "</td>" &
-                            "<td>" & acData.FanSpeedQuiet.ToString() & "</td>" &
-                            "<td>" & acData.FanspeedAuto.ToString() & "</td>" &
-                            "<td>" & acData.MinCoolSetPoint.ToString() & "</td>" &
-                            "<td>" & acData.MaxCoolSetPoint.ToString() & "</td>" &
-                            "<td>" & acData.MinHeatSetPoint.ToString() & "</td>" &
-                            "<td>" & acData.MaxHeatSetPoint.ToString() & "</td>" &
+            With acData
+                writer.WriteLine("<tr>" &
+                            "<td>" & .ACnumber & "</td>" &
+                            "<td>" & .ACName & "</td>" &
+                            "<td>" & .StartZone & "</td>" &
+                            "<td>" & .ZoneCount & "</td>" &
+                            "<td>" & .CoolMode.ToString() & "</td>" &
+                            "<td>" & .FanMode.ToString() & "</td>" &
+                            "<td>" & .DryMode.ToString() & "</td>" &
+                            "<td>" & .HeatMode.ToString() & "</td>" &
+                            "<td>" & .AutoMode.ToString() & "</td>" &
+                            "<td>" & .FanSpeedIA.ToString() & "</td>" &
+                            "<td>" & .FanSpeedTurbo.ToString() & "</td>" &
+                            "<td>" & .FanSpeedPowerful.ToString() & "</td>" &
+                            "<td>" & .FanSpeedHigh.ToString() & "</td>" &
+                            "<td>" & .FanSpeedMedium.ToString() & "</td>" &
+                            "<td>" & .FanSpeedLow.ToString() & "</td>" &
+                            "<td>" & .FanSpeedQuiet.ToString() & "</td>" &
+                            "<td>" & .FanspeedAuto.ToString() & "</td>" &
+                            "<td>" & .MinCoolSetPoint.ToString() & "</td>" &
+                            "<td>" & .MaxCoolSetPoint.ToString() & "</td>" &
+                            "<td>" & .MinHeatSetPoint.ToString() & "</td>" &
+                            "<td>" & .MaxHeatSetPoint.ToString() & "</td>" &
                             "</tr>" & vbCrLf)
+            End With
             writer.WriteLine("</table>" & vbCrLf)
 
             ' ========== A/C Status Section ==========
@@ -126,19 +128,21 @@ Friend Module Snapshot
                        "</tr>" & vbCrLf)
 
             ' Write A/C Status data row
-            writer.WriteLine("<tr>" & vbCrLf &
-                       "<td>" & acStatusMsg.ACPower.ToString() & "</td>" &
-                       "<td>" & acStatusMsg.Number.ToString() & "</td>" &
-                       "<td>" & acStatusMsg.Mode.ToString() & "</td>" &
-                       "<td>" & acStatusMsg.FanSpeed.ToString() & "</td>" &
-                       "<td>" & acStatusMsg.SetPoint.ToString() & "</td>" &
-                       "<td>" & acStatusMsg.Temperature.ToString() & "</td>" &
-                       "<td>" & acStatusMsg.Turbo.ToString() & "</td>" &
-                       "<td>" & acStatusMsg.Bypass.ToString() & "</td>" &
-                       "<td>" & acStatusMsg.Spill.ToString() & "</td>" &
-                       "<td>" & acStatusMsg.TimerSet.ToString() & "</td>" &
-                       "<td>" & acStatusMsg.Defrost.ToString() & "</td>" &
+            With acStatusMsg
+                writer.WriteLine("<tr>" & vbCrLf &
+                       "<td>" & .ACPower.ToString() & "</td>" &
+                       "<td>" & .Number.ToString() & "</td>" &
+                       "<td>" & .Mode.ToString() & "</td>" &
+                       "<td>" & .FanSpeed.ToString() & "</td>" &
+                       "<td>" & .SetPoint.ToString() & "</td>" &
+                       "<td>" & .Temperature.ToString() & "</td>" &
+                       "<td>" & .Turbo.ToString() & "</td>" &
+                       "<td>" & .Bypass.ToString() & "</td>" &
+                       "<td>" & .Spill.ToString() & "</td>" &
+                       "<td>" & .TimerSet.ToString() & "</td>" &
+                       "<td>" & .Defrost.ToString() & "</td>" &
                        "</tr>" & vbCrLf)
+            End With
             writer.WriteLine("</table>" & vbCrLf)
             writer.WriteLine("<p>Note: Turbo & Timer seem to be reporting incorrectly</p>")
 
@@ -161,18 +165,20 @@ Friend Module Snapshot
             ' Write data rows for each zone
             For Each item In ZoneStatuses
                 Dim zoneStatus = item.Value
-                writer.WriteLine("<tr>" & vbCrLf &
-                           "<td>" & zoneStatus.ZoneNumber.ToString() & "</td>" &
-                           "<td>" & ZoneNames(zoneStatus.ZoneNumber) & "</td>" &
-                           "<td>" & zoneStatus.ZoneState.ToString() & "</td>" &
-                           "<td>" & zoneStatus.ControlMethod.ToString() & "</td>" &
-                           "<td>" & zoneStatus.DamperOpen.ToString() & "</td>" &
-                           "<td>" & zoneStatus.SetPoint.ToString() & "</td>" &
-                           "<td>" & zoneStatus.Temperature.ToString() & "</td>" &
-                           "<td>" & zoneStatus.Sensor.ToString() & "</td>" &
-                           "<td>" & zoneStatus.Spill.ToString() & "</td>" &
-                           "<td>" & zoneStatus.Battery.ToString() & "</td>" &
+                With zoneStatus
+                    writer.WriteLine("<tr>" & vbCrLf &
+                           "<td>" & .ZoneNumber.ToString() & "</td>" &
+                           "<td>" & ZoneNames(.ZoneNumber) & "</td>" &
+                           "<td>" & .ZoneState.ToString() & "</td>" &
+                           "<td>" & .ControlMethod.ToString() & "</td>" &
+                           "<td>" & .DamperOpen.ToString() & "</td>" &
+                           "<td>" & .SetPoint.ToString() & "</td>" &
+                           "<td>" & .Temperature.ToString() & "</td>" &
+                           "<td>" & .Sensor.ToString() & "</td>" &
+                           "<td>" & .Spill.ToString() & "</td>" &
+                           "<td>" & .Battery.ToString() & "</td>" &
                            "</tr>" & vbCrLf)
+                End With
             Next
             writer.WriteLine("</table>" & vbCrLf)
 

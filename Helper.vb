@@ -11,7 +11,6 @@ Public Class TcpClientWithTimeout
         Optional encoding As Encoding = Nothing) As Byte()
 
         If encoding Is Nothing Then encoding = Encoding.ASCII
-
         Using client As New TcpClient()
             ' Configure client
             client.SendTimeout = timeoutMs

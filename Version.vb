@@ -47,17 +47,13 @@ Friend Module Version
             Debug.WriteLine("Response: " & Encoding.UTF8.GetString(response))
 
             ' Parse response into individual messages
-            Dim messages = ParseMessages(response)
+            Dim msg As Message = Message.Parse(response)
 
-            ' Process each message in response
-            For Each msg In messages
-                ' Parse message structure
-                Dim m = Message.Parse(msg)
-                VersionInfo = VersionInfo.Parse(m.data)
+            ' Parse message structure
+            VersionInfo = VersionStruct.Parse(msg.data)
 
-                ' Output version to debug
-                Debug.WriteLine("Console Version: " & VersionInfo.VersionText)
-            Next
+            ' Output version to debug
+            Debug.WriteLine("Console Version: " & VersionInfo.VersionText)
 
         Catch ex As TimeoutException
             ' Handle communication timeout

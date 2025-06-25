@@ -75,11 +75,11 @@ Friend Module Zones
                 .ZoneNumber = data(index) And &H3F,
                 .ControlMethod = CType((data(index + 1) >> 7) And &H1, ControlMethodEnum),
                 .DamperOpen = data(index + 1) And &H7F,
-                .SetPoint = (data(index + 2) + 100) / 10,
-                .Sensor = CType(data(index + 3) >> 7 And &H1, SensorStatusEnum),
+                .SetPoint = If(data(index + 2) = &HFF, Nothing, (data(index + 2) + 100) / 10),
+                .Sensor = CType((data(index + 3) >> 7) And &H1, SensorStatusEnum),
                 .Temperature = (((CInt(data(index + 4) And &H7) << 8) Or data(index + 5)) - 500) / 10.0,
-                .Spill = CType((data(index + 6) >> 1) And 1, SpillStatusEnum),
-                .Battery = CType((data(index + 6) And &H1), BatteryStatusEnum)
+                .Spill = CType((data(index + 6) >> 1) And &H1, SpillStatusEnum),
+                .Battery = CType(data(index + 6) And &H1, BatteryStatusEnum)
             }
         End Function
     End Structure
@@ -90,7 +90,7 @@ Friend Module Zones
     ' 1. Sends request for zone information
     ' 2. Processes response to extract zone names
     ' 3. Stores zone names in ZoneNames dictionary
-    Public Sub GetZones()
+    Public Sub GetZoneNames()
         ' Create request message (Extended type with command bytes FF 13)
         Dim requestData() As Byte = CreateMessage(MessageType.Extended, {&HFF, &H13})
         If Not AirTouch5Console.Connected Then Throw New System.Exception("Console not connected. Cannot retrieve zones.")
@@ -100,29 +100,27 @@ Friend Module Zones
                 AirTouch5Console.IP, AirTouchPort, requestData)
 
             ' Parse response messages
-            Dim messages = ParseMessages(response)
+            Dim msg As Message = Message.Parse(response)
             ZoneNames.Clear() ' Clear existing zone names
 
-            For Each msg In messages
-                Dim m = Message.Parse(msg)
-                Dim index = 2 ' Start of zone data in message
+            Dim index = 2 ' Start of zone data in message
 
-                ' Process each zone entry in the message
-                While index < m.data.Length - 1
-                    Dim ZoneNumber = m.data(index)
-                    Dim NameLength = m.data(index + 1)
+            ' Process each zone entry in the message
+            While index < msg.data.Length - 1
+                Dim ZoneNumber = msg.data(index)
+                Dim NameLength = msg.data(index + 1)
 
-                    ' Extract zone name (UTF8 encoded)
-                    Dim ZoneName = Encoding.UTF8.GetString(m.data, index + 2, NameLength)
-                    Debug.WriteLine($"Zone: {ZoneNumber} {ZoneName}")
+                ' Extract zone name (UTF8 encoded)
+                Dim ZoneName = Encoding.UTF8.GetString(msg.data, index + 2, NameLength)
+                Debug.WriteLine($"Zone: {ZoneNumber} {ZoneName}")
 
-                    ' Add to dictionary
-                    ZoneNames.Add(ZoneNumber, ZoneName)
+                ' Add to dictionary
+                ZoneNames.Add(ZoneNumber, ZoneName)
 
-                    ' Move to next zone entry
-                    index += NameLength + 2
-                End While
-            Next
+                ' Move to next zone entry
+                index += NameLength + 2
+            End While
+
         Catch ex As TimeoutException
             Debug.WriteLine("Request timed out")
         Catch ex As Exception
@@ -147,23 +145,23 @@ Friend Module Zones
                 AirTouch5Console.IP, AirTouchPort, requestData)
 
             ' Parse response messages
-            Dim messages = ParseMessages(response)
+            Dim msg As Message = Message.Parse(response)
 
-            For Each msg In messages
-                Dim m = Message.Parse(msg)
-                Dim index = 8 ' Start of zone status data in message
+            ZoneStatuses.Clear()
 
-                ' Process each zone status entry
-                While index < m.data.Length - 1
+            Dim index = 8 ' Start of zone status data in message
 
-                    ' Parse zone status
-                    zoneStatus = ZoneStatusMessage.Parse(m.data, index)
+            ' Process each zone status entry
+            While index < msg.data.Length - 1
 
-                    ' Store in dictionary
-                    ZoneStatuses(zoneStatus.ZoneNumber) = zoneStatus
+                ' Parse zone status
+                zoneStatus = ZoneStatusMessage.Parse(msg.data, index)
 
-                    ' Output debug information
-                    Debug.WriteLine(
+                ' Store in dictionary
+                ZoneStatuses(zoneStatus.ZoneNumber) = zoneStatus
+
+                ' Output debug information
+                Debug.WriteLine(
                         $"Zone: {ZoneNames(zoneStatus.ZoneNumber)} " &
                         $"Power State: {zoneStatus.ZoneState} " &
                         $"Control Method: {zoneStatus.ControlMethod} " &
@@ -173,10 +171,9 @@ Friend Module Zones
                         $"Spill: {zoneStatus.Spill} " &
                         $"Sensor: {zoneStatus.Sensor} " &
                         $"Battery: {zoneStatus.Battery}")
-                    ' Move to next zone status entry
-                    index += 8
-                End While
-            Next
+                ' Move to next zone status entry
+                index += 8
+            End While
         Catch ex As TimeoutException
             Debug.WriteLine("Request timed out")
         Catch ex As Exception

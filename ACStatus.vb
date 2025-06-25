@@ -32,6 +32,7 @@
         IA3 = 11
         IA4 = 12
         IA5 = 13
+        IA6 = 14
     End Enum
     Enum ActiveEnum
         InActive = 0
@@ -61,8 +62,8 @@
             Dim twoBytes(1) As Byte
             Array.Copy(data, index + 3, twoBytes, 0, 2)    ' copy 2 bytes of masks
             Array.Reverse(twoBytes)        ' reverse them to match big-endian format
-
             Dim bitArray As New BitArray(twoBytes)          ' create a bitarray with them
+
             ' Create and return populated structure
             Return New ACStatusMessage With {
                 .ACPower = CType((data(index) >> 4) And &HF, ACPowerEnum),
@@ -91,17 +92,13 @@
             Dim response As Byte() = TcpClientWithTimeout.SendAndReceiveBytes(
                 AirTouch5Console.IP, AirTouchPort, requestData)
 
-            ' Parse response messages
-            Dim messages = ParseMessages(response)
+            ' Parse message and extract AC data
+            Dim msg As Message = Message.Parse(response)
+            ' Parse raw data into structured format
+            acStatusMsg = ACStatusMessage.Parse(msg.data, 8)
 
-            For Each msg In messages
-                ' Parse message and extract AC data
-                Dim m = Message.Parse(msg)
-                ' Parse raw data into structured format
-                acStatusMsg = ACStatusMessage.Parse(m.data, 8)
-
-                ' Output AC status information
-                Debug.WriteLine(
+            ' Output AC status information
+            Debug.WriteLine(
                     $"Power: {acStatusMsg.ACPower} " &
                     $"AC #: {acStatusMsg.Number} " &
                     $"Mode: {acStatusMsg.Mode} " &
@@ -113,7 +110,6 @@
                     $"Temperature: {acStatusMsg.Temperature} " &
                     $"Defrost: {acStatusMsg.Defrost} " &
                     $"Error Code: {acStatusMsg.ErrorCode} ")
-            Next
         Catch ex As TimeoutException
             Debug.WriteLine("Request timed out")
         Catch ex As Exception

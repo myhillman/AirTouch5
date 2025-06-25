@@ -114,17 +114,13 @@ Friend Module ACability
                 AirTouch5Console.IP, AirTouchPort, requestData)
 
             ' Parse response messages
-            Dim messages = ParseMessages(response)
+            Dim msg As Message = Message.Parse(response)
 
-            For Each msg In messages
-                ' Parse message and extract AC data
-                Dim m = Message.Parse(msg)
+            ' Parse raw data into structured format
+            acData = ACability.Parse(msg.data, 2)
 
-                ' Parse raw data into structured format
-                acData = ACability.Parse(m.data, 2)
-
-                ' Output basic AC information
-                Debug.WriteLine(
+            ' Output basic AC information
+            Debug.WriteLine(
                     $"AC #: {acData.ACnumber} " &
                     $"AC name: {acData.ACName} " &
                     $"Start Zone: {acData.StartZone} " &
@@ -142,8 +138,8 @@ Friend Module ACability
                     $"Heat: {acData.HeatMode} " &
                     $"Auto: {acData.AutoMode}")
 
-                ' Output supported fan speeds
-                Debug.WriteLine(
+            ' Output supported fan speeds
+            Debug.WriteLine(
                     $"Fan Speeds: IA: {acData.FanSpeedIA} " &
                     $"Turbo: {acData.FanSpeedTurbo} " &
                     $"Powerful: {acData.FanSpeedPowerful} " &
@@ -152,7 +148,6 @@ Friend Module ACability
                     $"Low: {acData.FanSpeedLow} " &
                     $"Quiet: {acData.FanSpeedQuiet} " &
                     $"Auto: {acData.FanspeedAuto}")
-            Next
         Catch ex As TimeoutException
             Debug.WriteLine("Request timed out")
         Catch ex As Exception
