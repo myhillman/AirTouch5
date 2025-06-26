@@ -7,7 +7,7 @@ Public Class TcpClientWithTimeout
         host As String,
         port As Integer,
         message As Byte(),
-        Optional timeoutMs As Integer = 5000,
+        Optional timeoutMs As Integer = 10000,
         Optional encoding As Encoding = Nothing) As Byte()
 
         If encoding Is Nothing Then encoding = Encoding.ASCII
@@ -52,7 +52,7 @@ Public Class TcpClientWithTimeout
         host As String,
         port As Integer,
         message As Byte(),
-        Optional timeoutMs As Integer = 5000) As Byte()
+        Optional timeoutMs As Integer = 10000) As Byte()
 
         Debug.WriteLine($"Sending: {BitConverter.ToString(message)}")
         Using client As New TcpClient()

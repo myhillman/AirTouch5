@@ -91,21 +91,10 @@ Friend Module Messaging
                 Return Nothing
             End If
 
-            Dim datalength As Integer = (data(headerIndex + 8) << 8) Or data(headerIndex + 9) ' Get packet length from offsets 8-9 (big-endian) relative to header
-            ' Check if we have complete packet (header + reserved + length + data + checksum)
-            If data.Length < headerIndex + 10 + datalength + 2 Then
-                Form1.TextBox1.AppendText("Error: Packet length exceeds available data" & vbCrLf)
-                Return Nothing
-            End If
-
-            Dim csmoffset = headerIndex + datalength + 8
-            Dim CheckSum = (data(csmoffset) << 8) Or data(csmoffset + 1) ' Get checksum from offsets after data
-
-            ' Now all we have to do is copy the data payload, but handling redundant zero's
+            ' extract data, handling redundant zeros
             Dim payload As New IO.MemoryStream()    ' Build payload in memory stream and then convert to byte array
-            Dim DataStart As Integer = headerIndex + 10 ' Start of data after header and reserved bytes
-            i = DataStart
-            While i < DataStart + datalength  ' Process data bytes
+            i = headerIndex + 4 ' Start of data after header and reserved bytes
+            While i < data.Length - 2  ' Process data bytes, ignoring checksum
                 ' Check for redundant zero pattern (0x55 0x55 0x55 0x00)
                 If payload.Length >= 3 Then ' check for redundant byte
                     ' Check preceding 3 bytes are 0x55
@@ -123,20 +112,27 @@ Friend Module Messaging
                 payload.WriteByte(data(i))  ' output byte
                 i += 1      ' process next byte
             End While
+            Dim Checksum As UShort = BitConverter.ToUInt16(New Byte() {data(data.Length - 1), data(data.Length - 2)}, 0)    ' get last 2 bytes
 
             ' Debug output
-            Dim packet(data.Length - headerIndex) As Byte
-            Array.Copy(data, headerIndex, packet, 0, data.Length - headerIndex)
+            Dim packet = payload.ToArray
             Form1.TextBox1.AppendText($"Parsed message: {BitConverter.ToString(packet.ToArray())}" & vbCrLf)
+            ' Validate checksum
+            Dim calculatedChecksum = CalculateModbusCRC16(packet, 0)
+            If Checksum <> calculatedChecksum Then
+                Form1.TextBox1.AppendText($"Error: Checksum mismatch! Expected {calculatedChecksum:X4}, got {Checksum:X4}" & vbCrLf)
+                Return Nothing
+            End If
 
+            Dim dataLength = data(headerIndex + 8) << 8 Or data(headerIndex + 9)  ' get data length
             Return New Message With {
                 .addrFrom = data(headerIndex + 4),
                 .addrTo = data(headerIndex + 5),
                 .id = data(headerIndex + 6),
                 .messageType = CType(data(headerIndex + 7), MessageType),
-                .dataLength = payload.Length,
-                .data = payload.ToArray,
-                .checksum = CheckSum
+                .dataLength = dataLength,
+                .data = packet.Skip(6).Take(dataLength).ToArray(),
+                .checksum = Checksum
             }
         End Function
     End Structure
@@ -152,34 +148,32 @@ Friend Module Messaging
         Dim ms As New IO.MemoryStream
 
         ' Add message header (0x55 0x55 0x55 0xAA)
-        ms.WriteByte(&H55)
-        ms.WriteByte(&H55)
-        ms.WriteByte(&H55)
-        ms.WriteByte(&HAA)
+        Dim header() As Byte = {&H55, &H55, &H55, &HAA}
+        ms.Write(header, 0, header.Length)
 
         ' Add address bytes (depends on message type)
         If typ = MessageType.Control Then
-            AddByteToMessage(ms, &H80)  ' Control message address
+            ms.WriteByte(&H80)  ' Control message address
         Else
-            AddByteToMessage(ms, &H90)  ' Extended message address
+            ms.WriteByte(&H90)  ' Extended message address
         End If
-        AddByteToMessage(ms, &HB0)     ' Fixed address byte
+        ms.WriteByte(&HB0)     ' Fixed address byte
 
         ' Add message ID and type
-        AddByteToMessage(ms, 1)         ' Default ID
-        AddByteToMessage(ms, typ)       ' Message type
+        ms.WriteByte(1)         ' Default ID
+        ms.WriteByte(typ)       ' Message type
 
         ' Add data length (big-endian)
-        AddByteToMessage(ms, data.Length >> 8)   ' High byte
-        AddByteToMessage(ms, data.Length And &HFF) ' Low byte
+        ms.WriteByte(data.Length >> 8)   ' High byte
+        ms.WriteByte(data.Length And &HFF) ' Low byte
 
-        ' Add payload data
+        ' Add payload data. May need to add redundant 0 bytes
         For i = 0 To data.Length - 1
             AddByteToMessage(ms, data(i))
         Next
 
         ' Calculate and append CRC
-        Dim checksum = CalculateModbusCRC16WithSpecialRules(ms.ToArray)
+        Dim checksum = CalculateModbusCRC16(ms.ToArray, 4)
 
         ms.WriteByte((checksum >> 8) And &HFF)  ' CRC high byte
         ms.WriteByte(checksum And &HFF)  ' CRC low byte
@@ -212,27 +206,28 @@ Friend Module Messaging
         End If
     End Sub
 
-    ' Method: CalculateModbusCRC16WithSpecialRules
+    ' Method: CalculateModbusCRC16
     ' Purpose: Calculates CRC with special handling for 0x55 sequences
     ' Parameters:
     '   data - Byte array to calculate CRC for
     ' Returns:
     '   2-byte CRC
-    Public Function CalculateModbusCRC16WithSpecialRules(ByVal data As Byte()) As UShort
+    Public Function CalculateModbusCRC16(ByVal data As Byte(), start As Integer) As UShort
+        ' data is array of bytes to calculate CRC for
+        ' start is the index in the array where the CRC calculation should begin. 0 = all array, 4 = skip header
         ' Validate input
         If data Is Nothing Then
             Return &HFFFF ' Invalid CRC
         End If
 
         Dim crc As UShort = &HFFFF
-        Dim i As Integer = 4        ' skip header bytes (0x55 0x55 0x55 0xAA)
+        Dim i As Integer = start
         While i < data.Length
             ProcessByteForCRC(data(i), crc)
             i += 1
         End While
 
-        ' Return CRC in big-endian format
-        Return crc
+        Return crc  ' Return CRC in big-endian format
     End Function
 
     ' Method: ProcessByteForCRC

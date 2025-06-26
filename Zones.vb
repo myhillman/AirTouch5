@@ -84,7 +84,7 @@ Friend Module Zones
         End Function
     End Structure
 
-    ' Method: GetZones
+    ' Method: GetZonesNames
     ' Purpose: Retrieves zone names from AirTouch console
     ' Flow:
     ' 1. Sends request for zone information
@@ -136,7 +136,7 @@ Friend Module Zones
     ' 3. Stores status in ZoneStatuses dictionary
     Public Sub GetZoneStatus()
         ' Create control request message (command byte 21)
-        Dim requestData() As Byte = CreateMessage(MessageType.Control, {&H21, 0, 0, 0, 0, 0, 0, 0})
+        Dim requestData() As Byte = CreateMessage(MessageType.Control, {CommandMessages.ZoneStatus, 0, 0, 0, 0, 0, 0, 0})
         Dim zoneStatus As ZoneStatusMessage
 
         Try
@@ -161,16 +161,18 @@ Friend Module Zones
                 ZoneStatuses(zoneStatus.ZoneNumber) = zoneStatus
 
                 ' Output debug information
-                Debug.WriteLine(
-                        $"Zone: {ZoneNames(zoneStatus.ZoneNumber)} " &
-                        $"Power State: {zoneStatus.ZoneState} " &
-                        $"Control Method: {zoneStatus.ControlMethod} " &
-                        $"Damper Open: {zoneStatus.DamperOpen}% " &
-                        $"Set Point: {zoneStatus.SetPoint} " &
-                        $"Temperature: {zoneStatus.Temperature} " &
-                        $"Spill: {zoneStatus.Spill} " &
-                        $"Sensor: {zoneStatus.Sensor} " &
-                        $"Battery: {zoneStatus.Battery}")
+                With zoneStatus
+                    Debug.WriteLine(
+                        $"Zone: {ZoneNames(.ZoneNumber)} " &
+                        $"Power State: { .ZoneState} " &
+                        $"Control Method: { .ControlMethod} " &
+                        $"Damper Open: { .DamperOpen}% " &
+                        $"Set Point: { .SetPoint} " &
+                        $"Temperature: { .Temperature} " &
+                        $"Spill: { .Spill} " &
+                        $"Sensor: { .Sensor} " &
+                        $"Battery: { .Battery}")
+                End With
                 ' Move to next zone status entry
                 index += 8
             End While
