@@ -12,7 +12,7 @@ Friend Module Snapshot
     Sub MakeSnapshot()
         ' Define the HTML file path where the snapshot will be saved
         Dim filePath As String = $"ACSummary_{Now:yyyyMMdd_HHmmss}.html"
-
+        Form1.RefreshData()
         ' Create and write HTML content to file using StreamWriter
         Using writer As New StreamWriter(filePath)
             ' Write HTML document header with CSS styling for single-line table borders

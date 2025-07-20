@@ -39,8 +39,8 @@
         Active = 1
     End Enum
 
-    ' Structure: ACability
-    ' Purpose: Contains all capability information for an AC unit
+    ' Structure: ACStatusMessage
+    ' Purpose: Contains all status information for an AC unit
     Public Structure ACStatusMessage
         ' Basic identification
         Dim ACPower As ACPowerEnum
@@ -84,7 +84,7 @@
     Public acStatusMsg As ACStatusMessage
     Public Sub GetACStatus()
         ' Create extended message requesting AC capabilities
-        Dim requestData() As Byte = CreateMessage(MessageType.Control, {&H23, 0, 0, 0, 0, 0, 0, 0})
+        Dim requestData() As Byte = CreateMessage(MessageType.Control, {CommandMessages.ACStatus, 0, 0, 0, 0, 0, 0, 0})
 
         If Not AirTouch5Console.Connected Then Throw New System.Exception("Console not connected. Cannot retrieve AC status.")
         Try
@@ -115,6 +115,6 @@
         Catch ex As Exception
             Debug.WriteLine("Error: " & ex.Message)
         End Try
-        Form1.TextBox1.AppendText($"Retrieved AC status information.{vbCrLf}")
+        Form1.AppendText($"Retrieved AC status information.{vbCrLf}")
     End Sub
 End Module

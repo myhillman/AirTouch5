@@ -63,6 +63,6 @@ Friend Module Version
             ' Handle all other exceptions
             Debug.WriteLine("Error: " & ex.Message)
         End Try
-        Form1.TextBox1.AppendText($"Retrieved version information.{vbCrLf}")
+        Form1.AppendText($"Retrieved version information.{vbCrLf}")
     End Sub
 End Module

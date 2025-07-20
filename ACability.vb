@@ -153,7 +153,7 @@ Friend Module ACability
         Catch ex As Exception
             Debug.WriteLine("Error: " & ex.Message)
         End Try
-        Form1.TextBox1.AppendText($"Retrieved AC ability information.{vbCrLf}")
+        Form1.AppendText($"Retrieved AC ability information.{vbCrLf}")
     End Sub
 
     ' Method: GetNullTerminatedString

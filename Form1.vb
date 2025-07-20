@@ -1,4 +1,5 @@
-﻿Public Class Form1
+﻿Imports System
+Public Class Form1
     Private Async Sub FindControllerToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles FindControllerToolStripMenuItem.Click
         Await DiscoverConsole()
         If AirTouch5Console.Connected Then
@@ -36,6 +37,88 @@
             TextBox1.AppendText("Refresh complete" & vbCrLf)
         Else
             TextBox1.AppendText("Console not connected. Cannot refresh data." & vbCrLf)
+        End If
+    End Sub
+
+    Private Async Sub StartMonitorToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles StartMonitorToolStripMenuItem.Click
+        If Monitor.zoneMonitorTimer IsNot Nothing Then
+            MsgBox("You cannot start monitoring when it is already running", vbCritical + vbOKOnly, "Monitoring Already Running")
+            Exit Sub
+        End If
+        If Not AirTouch5Console.Connected Then
+            Await DiscoverConsole()
+            If AirTouch5Console.Connected Then
+                RefreshData()
+            End If
+        End If
+        Monitor.SetMainForm(Me)
+        Monitor.StartZoneMonitoring()
+    End Sub
+
+    Private Sub ExportExcelToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ExportExcelToolStripMenuItem.Click
+        Monitor.ExportExcel()
+    End Sub
+
+    Private Async Sub ChartToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ChartToolStripMenuItem.Click
+        ' If we have no zone name data, connect and get it.
+        If Not AirTouch5Console.Connected Then
+            Await DiscoverConsole()
+        End If
+
+        ' Read the start and end dates from the user
+        Dim startDate As Date
+        Dim endDate As Date
+        Dim DefaultDate = Strings.Format(Now(), "yyyy-MM-dd")
+
+        ' Input and validate start date
+        While True
+            Dim startInput = InputBox("Enter start date (YYYY-MM-DD): ", "Start Date", DefaultDate)
+            If Date.TryParseExact(startInput, "yyyy-MM-dd",
+                                 System.Globalization.CultureInfo.InvariantCulture,
+                                 System.Globalization.DateTimeStyles.None, startDate) Then
+                Exit While
+            End If
+        End While
+
+        ' Input and validate end date
+        DefaultDate = Strings.Format(startDate, "yyyy-MM-dd")
+        While True
+            Dim endInput = InputBox("Enter end date (YYYY-MM-DD): ", "Start Date", DefaultDate)
+            If Date.TryParseExact(endInput, "yyyy-MM-dd",
+                                 System.Globalization.CultureInfo.InvariantCulture,
+                                 System.Globalization.DateTimeStyles.None, endDate) Then
+                ' Additional validation to ensure end date is after start date
+                If endDate >= startDate Then
+                    Exit While
+                End If
+            End If
+        End While
+        ' Get the zone names
+        If ZoneNames.Count = 0 Then
+            GetZoneNames()
+        End If
+        Dim svg = GenerateZoneSvgChart(startDate, endDate)      ' generate the chart
+        Dim svgPath = "ZoneChart.svg"
+        System.IO.File.WriteAllText(svgPath, svg)
+        Monitor.ConvertSvgStringToPng(svg, "ZoneChart.png")         ' save as png
+        TextBox1.AppendText($"SVG file written to {svgPath}{vbCrLf}")
+        ' Open with default browser (works in .NET Framework and .NET Core)
+        Try
+            Dim psi As New ProcessStartInfo With {
+                .FileName = svgPath,
+                .UseShellExecute = True
+            }
+            Process.Start(psi)
+        Catch ex As Exception
+            MessageBox.Show("Could not open SVG file: " & ex.Message)
+        End Try
+    End Sub
+    Public Sub AppendText(text As String)
+        ' Append text to textbox1 in a thread safe way
+        If TextBox1.InvokeRequired Then
+            TextBox1.BeginInvoke(Sub() TextBox1.AppendText(text))
+        Else
+            TextBox1.AppendText(text)
         End If
     End Sub
 End Class

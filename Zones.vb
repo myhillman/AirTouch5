@@ -1,4 +1,5 @@
-﻿Imports System.Text
+﻿Imports System.Reflection.Metadata
+Imports System.Text
 Imports AirTouch5.Form1
 
 ' ==============================================================
@@ -55,7 +56,7 @@ Friend Module Zones
     ' Structure: ZoneStatusMessage
     ' Purpose: Represents the complete status of a zone
     Public Structure ZoneStatusMessage
-        Public ZoneState As ZoneStateEnum ' Current power state
+        Public ZoneState As ZoneStateEnum        ' Current power state
         Public ZoneNumber As Byte                   ' Zone number (0-15)
         Public ControlMethod As ControlMethodEnum   ' Current control method
         Public DamperOpen As Byte                   ' Percentage open (0-100%)
@@ -74,7 +75,7 @@ Friend Module Zones
                 .ZoneState = CType((data(index) >> 6) And &H3, ZoneStateEnum),
                 .ZoneNumber = data(index) And &H3F,
                 .ControlMethod = CType((data(index + 1) >> 7) And &H1, ControlMethodEnum),
-                .DamperOpen = data(index + 1) And &H7F,
+                .DamperOpen = data(index + 3) And &H7F,
                 .SetPoint = If(data(index + 2) = &HFF, Nothing, (data(index + 2) + 100) / 10),
                 .Sensor = CType((data(index + 3) >> 7) And &H1, SensorStatusEnum),
                 .Temperature = (((CInt(data(index + 4) And &H7) << 8) Or data(index + 5)) - 500) / 10.0,
@@ -92,6 +93,7 @@ Friend Module Zones
     ' 3. Stores zone names in ZoneNames dictionary
     Public Sub GetZoneNames()
         ' Create request message (Extended type with command bytes FF 13)
+        Form1.AppendText("Get Zone Names" & vbCrLf)
         Dim requestData() As Byte = CreateMessage(MessageType.Extended, {&HFF, &H13})
         If Not AirTouch5Console.Connected Then Throw New System.Exception("Console not connected. Cannot retrieve zones.")
         Try
@@ -136,6 +138,7 @@ Friend Module Zones
     ' 3. Stores status in ZoneStatuses dictionary
     Public Sub GetZoneStatus()
         ' Create control request message (command byte 21)
+        Form1.AppendText("Get Zone Status" & vbCrLf)
         Dim requestData() As Byte = CreateMessage(MessageType.Control, {CommandMessages.ZoneStatus, 0, 0, 0, 0, 0, 0, 0})
         Dim zoneStatus As ZoneStatusMessage
 
@@ -181,6 +184,6 @@ Friend Module Zones
         Catch ex As Exception
             Debug.WriteLine("Error: " & ex.Message)
         End Try
-        Form1.TextBox1.AppendText("Zone Statuses retrieved successfully." & vbCrLf)
+        Form1.AppendText("Zone Statuses retrieved successfully." & vbCrLf)
     End Sub
 End Module

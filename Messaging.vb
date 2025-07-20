@@ -81,13 +81,13 @@ Friend Module Messaging
             Next
 
             If Not headerFound Then
-                Form1.TextBox1.AppendText("Error: Header sequence 0x55 0x55 0x55 0xAA not found" & vbCrLf)
+                Form1.AppendText("Error: Header sequence 0x55 0x55 0x55 0xAA not found" & vbCrLf)
                 Return Nothing
             End If
 
             ' Verify we have enough data after the header (minimum 6 bytes: 2 reserved + 2 length + 2 checksum)
             If data.Length < headerIndex + 10 Then
-                Form1.TextBox1.AppendText("Error: Insufficient data after header" & vbCrLf)
+                Form1.AppendText("Error: Insufficient data after header" & vbCrLf)
                 Return Nothing
             End If
 
@@ -103,7 +103,7 @@ Friend Module Messaging
                         If data(i) = 0 Then
                             ' Found redundant 0x00 after 3 0x55 bytes
                             i += 1 ' Skip this byte
-                            Form1.TextBox1.AppendText("Removing redundant 0x00 from sequence at index " & i & vbCrLf)
+                            Form1.AppendText("Removing redundant 0x00 from sequence at index " & i & vbCrLf)
                             Continue While
                         End If
                     Next
@@ -116,11 +116,11 @@ Friend Module Messaging
 
             ' Debug output
             Dim packet = payload.ToArray
-            Form1.TextBox1.AppendText($"Parsed message: {BitConverter.ToString(packet.ToArray())}" & vbCrLf)
+            Form1.AppendText($"Parsed message: {BitConverter.ToString(packet.ToArray())}" & vbCrLf)
             ' Validate checksum
-            Dim calculatedChecksum = CalculateModbusCRC16(packet, 0)
+            Dim calculatedChecksum = CalculateModbusCRC16(packet)
             If Checksum <> calculatedChecksum Then
-                Form1.TextBox1.AppendText($"Error: Checksum mismatch! Expected {calculatedChecksum:X4}, got {Checksum:X4}" & vbCrLf)
+                Form1.AppendText($"Error: Checksum mismatch! Expected {calculatedChecksum:X4}, got {Checksum:X4}" & vbCrLf)
                 Return Nothing
             End If
 
@@ -145,7 +145,7 @@ Friend Module Messaging
     ' Returns:
     '   Byte array containing complete formatted message
     Public Function CreateMessage(typ As MessageType, data As Byte()) As Byte()
-        Dim ms As New IO.MemoryStream
+        Dim ms As New IO.MemoryStream()
 
         ' Add message header (0x55 0x55 0x55 0xAA)
         Dim header() As Byte = {&H55, &H55, &H55, &HAA}
@@ -212,7 +212,7 @@ Friend Module Messaging
     '   data - Byte array to calculate CRC for
     ' Returns:
     '   2-byte CRC
-    Public Function CalculateModbusCRC16(ByVal data As Byte(), start As Integer) As UShort
+    Public Function CalculateModbusCRC16(ByVal data As Byte(), Optional start As Integer = 0) As UShort
         ' data is array of bytes to calculate CRC for
         ' start is the index in the array where the CRC calculation should begin. 0 = all array, 4 = skip header
         ' Validate input

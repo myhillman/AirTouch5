@@ -24,20 +24,24 @@ Partial Class Form1
     Private Sub InitializeComponent()
         MenuStrip1 = New MenuStrip()
         FindControllerToolStripMenuItem = New ToolStripMenuItem()
-        RefreshDataToolStripMenuItem = New ToolStripMenuItem()
-        SnapshotToolStripMenuItem = New ToolStripMenuItem()
-        TextBox1 = New TextBox()
         GetZonesToolStripMenuItem = New ToolStripMenuItem()
         ZoneStatusToolStripMenuItem = New ToolStripMenuItem()
         ACAbilityToolStripMenuItem = New ToolStripMenuItem()
         ACStatusToolStripMenuItem = New ToolStripMenuItem()
         GetVersionToolStripMenuItem = New ToolStripMenuItem()
+        RefreshDataToolStripMenuItem = New ToolStripMenuItem()
+        SnapshotToolStripMenuItem = New ToolStripMenuItem()
+        MonitorToolStripMenuItem = New ToolStripMenuItem()
+        StartMonitorToolStripMenuItem = New ToolStripMenuItem()
+        ExportExcelToolStripMenuItem = New ToolStripMenuItem()
+        ChartToolStripMenuItem = New ToolStripMenuItem()
+        TextBox1 = New TextBox()
         MenuStrip1.SuspendLayout()
         SuspendLayout()
         ' 
         ' MenuStrip1
         ' 
-        MenuStrip1.Items.AddRange(New ToolStripItem() {FindControllerToolStripMenuItem, RefreshDataToolStripMenuItem, SnapshotToolStripMenuItem})
+        MenuStrip1.Items.AddRange(New ToolStripItem() {FindControllerToolStripMenuItem, RefreshDataToolStripMenuItem, SnapshotToolStripMenuItem, MonitorToolStripMenuItem})
         MenuStrip1.Location = New Point(0, 0)
         MenuStrip1.Name = "MenuStrip1"
         MenuStrip1.Size = New Size(800, 24)
@@ -51,6 +55,36 @@ Partial Class Form1
         FindControllerToolStripMenuItem.Size = New Size(98, 20)
         FindControllerToolStripMenuItem.Text = "Find Controller"
         ' 
+        ' GetZonesToolStripMenuItem
+        ' 
+        GetZonesToolStripMenuItem.Name = "GetZonesToolStripMenuItem"
+        GetZonesToolStripMenuItem.Size = New Size(136, 22)
+        GetZonesToolStripMenuItem.Text = "Get Zones"
+        ' 
+        ' ZoneStatusToolStripMenuItem
+        ' 
+        ZoneStatusToolStripMenuItem.Name = "ZoneStatusToolStripMenuItem"
+        ZoneStatusToolStripMenuItem.Size = New Size(136, 22)
+        ZoneStatusToolStripMenuItem.Text = "Zone Status"
+        ' 
+        ' ACAbilityToolStripMenuItem
+        ' 
+        ACAbilityToolStripMenuItem.Name = "ACAbilityToolStripMenuItem"
+        ACAbilityToolStripMenuItem.Size = New Size(136, 22)
+        ACAbilityToolStripMenuItem.Text = "AC ability"
+        ' 
+        ' ACStatusToolStripMenuItem
+        ' 
+        ACStatusToolStripMenuItem.Name = "ACStatusToolStripMenuItem"
+        ACStatusToolStripMenuItem.Size = New Size(136, 22)
+        ACStatusToolStripMenuItem.Text = "AC status"
+        ' 
+        ' GetVersionToolStripMenuItem
+        ' 
+        GetVersionToolStripMenuItem.Name = "GetVersionToolStripMenuItem"
+        GetVersionToolStripMenuItem.Size = New Size(136, 22)
+        GetVersionToolStripMenuItem.Text = "Get Version"
+        ' 
         ' RefreshDataToolStripMenuItem
         ' 
         RefreshDataToolStripMenuItem.Name = "RefreshDataToolStripMenuItem"
@@ -63,6 +97,31 @@ Partial Class Form1
         SnapshotToolStripMenuItem.Size = New Size(68, 20)
         SnapshotToolStripMenuItem.Text = "Snapshot"
         ' 
+        ' MonitorToolStripMenuItem
+        ' 
+        MonitorToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {StartMonitorToolStripMenuItem, ExportExcelToolStripMenuItem, ChartToolStripMenuItem})
+        MonitorToolStripMenuItem.Name = "MonitorToolStripMenuItem"
+        MonitorToolStripMenuItem.Size = New Size(62, 20)
+        MonitorToolStripMenuItem.Text = "Monitor"
+        ' 
+        ' StartMonitorToolStripMenuItem
+        ' 
+        StartMonitorToolStripMenuItem.Name = "StartMonitorToolStripMenuItem"
+        StartMonitorToolStripMenuItem.Size = New Size(180, 22)
+        StartMonitorToolStripMenuItem.Text = "Start Monitor"
+        ' 
+        ' ExportExcelToolStripMenuItem
+        ' 
+        ExportExcelToolStripMenuItem.Name = "ExportExcelToolStripMenuItem"
+        ExportExcelToolStripMenuItem.Size = New Size(180, 22)
+        ExportExcelToolStripMenuItem.Text = "Export Excel"
+        ' 
+        ' ChartToolStripMenuItem
+        ' 
+        ChartToolStripMenuItem.Name = "ChartToolStripMenuItem"
+        ChartToolStripMenuItem.Size = New Size(180, 22)
+        ChartToolStripMenuItem.Text = "Make chart"
+        ' 
         ' TextBox1
         ' 
         TextBox1.Anchor = AnchorStyles.Top Or AnchorStyles.Bottom Or AnchorStyles.Left Or AnchorStyles.Right
@@ -71,36 +130,6 @@ Partial Class Form1
         TextBox1.Name = "TextBox1"
         TextBox1.Size = New Size(777, 404)
         TextBox1.TabIndex = 1
-        ' 
-        ' GetZonesToolStripMenuItem
-        ' 
-        GetZonesToolStripMenuItem.Name = "GetZonesToolStripMenuItem"
-        GetZonesToolStripMenuItem.Size = New Size(180, 22)
-        GetZonesToolStripMenuItem.Text = "Get Zones"
-        ' 
-        ' ZoneStatusToolStripMenuItem
-        ' 
-        ZoneStatusToolStripMenuItem.Name = "ZoneStatusToolStripMenuItem"
-        ZoneStatusToolStripMenuItem.Size = New Size(180, 22)
-        ZoneStatusToolStripMenuItem.Text = "Zone Status"
-        ' 
-        ' ACAbilityToolStripMenuItem
-        ' 
-        ACAbilityToolStripMenuItem.Name = "ACAbilityToolStripMenuItem"
-        ACAbilityToolStripMenuItem.Size = New Size(180, 22)
-        ACAbilityToolStripMenuItem.Text = "AC ability"
-        ' 
-        ' ACStatusToolStripMenuItem
-        ' 
-        ACStatusToolStripMenuItem.Name = "ACStatusToolStripMenuItem"
-        ACStatusToolStripMenuItem.Size = New Size(180, 22)
-        ACStatusToolStripMenuItem.Text = "AC status"
-        ' 
-        ' GetVersionToolStripMenuItem
-        ' 
-        GetVersionToolStripMenuItem.Name = "GetVersionToolStripMenuItem"
-        GetVersionToolStripMenuItem.Size = New Size(180, 22)
-        GetVersionToolStripMenuItem.Text = "Get Version"
         ' 
         ' Form1
         ' 
@@ -128,5 +157,9 @@ Partial Class Form1
     Friend WithEvents ACAbilityToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ACStatusToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents GetVersionToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents MonitorToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents StartMonitorToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ExportExcelToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ChartToolStripMenuItem As ToolStripMenuItem
 
 End Class

@@ -66,6 +66,27 @@ Friend Module Console
             DeviceName = String.Empty
             Connected = connect
         End Sub
+        Public Shared Function Parse(data As String) As AirTouchConsole
+            ' Parse the response data into the AirTouchConsole structure
+            ' Validate input data
+            If String.IsNullOrWhiteSpace(data) Then
+                Throw New ArgumentException("Empty response data")
+            End If
+            ' Process the response (comma-separated values)
+            Dim decode = data.Split(","c)  ' split into pieces
+            If decode.Length < 5 Then
+                Throw New FormatException("Invalid response format")
+            End If
+
+            Return New AirTouchConsole With {
+                .IP = decode(0),
+                .ConsoleID = decode(1),
+                .AirTouch5 = decode(2),
+                .AirTouchID = decode(3),
+                .DeviceName = decode(4),
+                .Connected = True
+            }
+        End Function
     End Structure
 
     ' Global instance to store discovered console information
@@ -83,7 +104,7 @@ Friend Module Console
     ' ==============================================================
 
     Public Async Function DiscoverConsole() As Task(Of Boolean)
-        Form1.TextBox1.AppendText("Starting discovery...")
+        Form1.AppendText("Starting discovery...")
 
         ' Initialize client if needed
         If udpClient Is Nothing Then
@@ -111,17 +132,9 @@ Friend Module Console
         Await receiveTask
         Debug.WriteLine("Discovery completed", responseMessage)
 
-        ' Process the response (comma-separated values)
-        Dim decode = responseMessage.Split(",")     ' split into pieces
-        With AirTouch5Console
-            .IP = decode(0)
-            .ConsoleID = decode(1)
-            .AirTouch5 = decode(2)
-            .AirTouchID = decode(3)
-            .DeviceName = decode(4)
-            .Connected = True
-        End With
-        Form1.TextBox1.AppendText($"Found AirTouch Console: {AirTouch5Console.DeviceName} at IP {AirTouch5Console.IP}{vbCrLf}")
+        AirTouch5Console = New AirTouchConsole(True).Parse(responseMessage)
+
+        Form1.AppendText($"Found AirTouch Console: {AirTouch5Console.DeviceName} at IP {AirTouch5Console.IP}{vbCrLf}")
 
         ' Clean up client after use
         If udpClient IsNot Nothing Then
