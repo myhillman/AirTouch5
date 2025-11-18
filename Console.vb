@@ -3,6 +3,9 @@ Imports System.Net.Sockets
 Imports System.Text
 
 Friend Module Console
+    ' Global instance to store discovered console information
+    Public AirTouch5Console As New AirTouchConsole(False) ' Initialize with not connected
+
     ' ==============================================================
     ' Module: Console
     ' Purpose: Handles discovery and communication with AirTouch consoles
@@ -88,9 +91,6 @@ Friend Module Console
             }
         End Function
     End Structure
-
-    ' Global instance to store discovered console information
-    Public AirTouch5Console As New AirTouchConsole(False) ' Initialize with not connected
 
     ' ==============================================================
     ' Sub: DiscoverConsole

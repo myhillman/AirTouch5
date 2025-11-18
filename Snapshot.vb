@@ -36,7 +36,7 @@ Friend Module Snapshot
             ' Write report header with timestamp and system information
             writer.WriteLine("<h1>AirTouch A/C Summary</h1>" & vbCrLf)
             writer.WriteLine($"Snapshot taken at: {DateTime.Now:yyyy-MM-dd HH:mm:ss}<br>{vbCrLf}")
-            writer.WriteLine($"<p>Console: ID={AirTouch5Console.ConsoleID} System ID={AirTouch5Console.AirTouchID} IP={AirTouch5Console.IP} Version={VersionInfo.VersionText} ({If(VersionInfo.UpdateSign = 0, "Latest", "Update")})</p>{vbCrLf}")
+            writer.WriteLine($"<p>Console: ID={AirTouch5Console.ConsoleID} System ID={AirTouch5Console.AirTouchID} IP={AirTouch5Console.IP} Version={VersionInfo.AnnotatedVersion}</p>{vbCrLf}")
             writer.WriteLine($"Installed address: 28 Murndal Drive, Donvale. Vic 3111.  Contact Marc Hillman 0432 686 808{vbCrLf}")
 
             ' ========== A/C Ability Section ==========

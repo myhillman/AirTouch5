@@ -1,10 +1,8 @@
 ﻿Imports System.Drawing.Imaging
-Imports System.IO
 Imports System.Security.Policy
 Imports System.Text
-Imports System.Windows.Forms.DataFormats
-Imports System.Xml
 Imports Microsoft.Data.Sqlite
+Imports Microsoft.Office.Interop.Excel
 Imports OfficeOpenXml
 Imports Svg
 
@@ -16,8 +14,6 @@ Module Monitor
     Public Sub SetMainForm(f As Form)
         mainForm = f
     End Sub
-
-
 
     Public Sub StartZoneMonitoring()
         ZoneMonitorTimer_Elapsed()        ' take first sample straight away
@@ -71,10 +67,10 @@ Module Monitor
             Dim lastId As Long = CLng(lastIdCmd.ExecuteScalar())
 
             ' create table of zone data if doesn't exist
-            createTableCmd = New SqliteCommand("CREATE TABLE IF NOT EXISTS ZoneData (id INTEGER, ZoneNumber INTEGER, ZoneState BOOLEAN, DamperOpen INTEGER, SetPoint INTEGER, Temperature NUMERIC(3,1))", conn)
+            createTableCmd = New SqliteCommand("CREATE TABLE IF NOT EXISTS ZoneData (id INTEGER, ZoneNumber INTEGER, ZoneState BOOLEAN, DamperOpen INTEGER, SetPoint INTEGER, Temperature NUMERIC(3,1), Spill BOOLEAN)", conn)
             createTableCmd.ExecuteNonQuery()
 
-            cmd = New SqliteCommand("INSERT INTO ZoneData (id, ZoneNumber, ZoneState, DamperOpen, SetPoint, Temperature) VALUES (@id, @ZoneNumber, @ZoneState, @DamperOpen, @SetPoint, @Temperature)", conn)
+            cmd = New SqliteCommand("INSERT INTO ZoneData (id, ZoneNumber, ZoneState, DamperOpen, SetPoint, Temperature, Spill) VALUES (@id, @ZoneNumber, @ZoneState, @DamperOpen, @SetPoint, @Temperature, @Spill)", conn)
             For Each zone In Zones.ZoneStatuses
                 cmd.Parameters.Clear()
                 cmd.Parameters.AddWithValue("@id", lastId)
@@ -83,6 +79,7 @@ Module Monitor
                 cmd.Parameters.AddWithValue("@DamperOpen", zone.Value.DamperOpen)
                 cmd.Parameters.AddWithValue("@SetPoint", zone.Value.SetPoint)
                 cmd.Parameters.AddWithValue("@Temperature", Math.Round(zone.Value.Temperature, 1))
+                cmd.Parameters.AddWithValue("@Spill", If(zone.Value.Spill = SpillStatusEnum.Inactive, 0, 1))
                 cmd.ExecuteNonQuery()
             Next
         End Using
@@ -148,9 +145,9 @@ Module Monitor
     ''' - Margins: Left 90px, Bottom 140px
     ''' 
     ''' Color Scheme:
-    ''' - Damper/AC Status: #1E90FF (DodgerBlue)
+    ''' - Damper/AC Status: Blue
     ''' - SetPoints: #32CD32 (LimeGreen) with dashed line
-    ''' - Temperature: #FF4500 (OrangeRed)
+    ''' - Temperature: Red
     ''' 
     ''' Normalization:
     ''' - Temperatures normalized to 17-24°C range
@@ -161,13 +158,13 @@ Module Monitor
     ''' File.WriteAllText("chart.svg", svgChart)
     ''' </example>
 
-    Public Function GenerateZoneSvgChart(StartDate As Date, EndDate As Date) As String
+    Public Function GenerateZoneSvgChart(StartDate As Date) As String
         Const dashed = "10 10"       ' pattern for dashed lines
         Const MinTemp = 17          ' minimum temperature on chart
         Const MaxTemp = 24          ' maximum temperature on chart
         Const width = 1200          ' width of series plots
         Const heightPerZone = 100
-        Const marginLeft = 90
+        Const marginLeft = 110
         Const marginBottom = 140 ' Increased for legend and axis labels
         Const ZoneGap = 10        ' gap between zones
         Const TempScaleMargin = 40  ' area for scale margin
@@ -175,19 +172,19 @@ Module Monitor
         Const MaxAllowedGapSeconds As Double = MaxAllowedGapMinutes * 60
 
         ' Fixed SVG colors for each field
-        Const damperColor As String = "DodgerBlue"      ' Blue for DamperOpen
+        Const damperColor As String = "Blue"      ' Blue for DamperOpen
         Const setPointColor As String = "LimeGreen"    ' Green for SetPoint
-        Const tempColor As String = "OrangeRed"        ' Orange/Red for Temperature
+        Const tempColor As String = "Red"        ' Orange/Red for Temperature
 
         ' Color adjustment for inactive zones
-        Const inactiveOpacity As String = "0.5"
+        Const inactiveOpacity As String = "0.3"
         Const activeOpacity As String = "1.0"
 
         Dim x As Integer, y As Integer
         Dim ZoneTop As Integer, ZoneBottom As Integer, ZoneCenter As Integer     ' y values for top, middle and bottom of data series
         Dim ZoneHeight As Integer           ' height of data series
 
-        Dim data As DataTable = GetZoneDataTable(StartDate, EndDate)
+        Dim data As Data.DataTable = GetZoneDataTable(StartDate)
         ' Get min/max date for scaling
         Dim minDate = data.AsEnumerable().Min(Function(r) DateTime.Parse(r("Date").ToString()))
         Dim maxDate = data.AsEnumerable().Max(Function(r) DateTime.Parse(r("Date").ToString()))
@@ -207,6 +204,9 @@ Module Monitor
         Dim sb As New StringBuilder()
 
         sb.AppendLine($"<svg width=""{width + marginLeft + TempScaleMargin}"" height=""{height + marginBottom}"" xmlns=""http://www.w3.org/2000/svg"">")
+        ' Add copyright details
+        sb.AppendLine("<!-- Copyright © " & Date.Now.Year & " Marc Hillman -->")
+
         sb.AppendLine("<style>.label {font-size:12px; font-family:sans-serif;}</style>")
         sb.AppendLine("<style>.comment {font-size:18px; font-family:sans-serif;}</style>")
         sb.AppendLine("<style>text {font-stretch: normal!important; font-style:normal!important; font-variant:normal!important;}</style>")
@@ -254,7 +254,7 @@ Module Monitor
             ZoneTop = (zone - minZone) * heightPerZone + ZoneGap        ' top of zone series area
             ZoneBottom = (zone - minZone + 1) * heightPerZone           ' bottom of zone series area
             ZoneCenter = (ZoneTop + ZoneBottom) / 2                     ' center of zone series area
-            Dim ZoneLabel As String = If(zone <= maxZone, Zones.ZoneNames(zone), "AC unit")
+            Dim ZoneLabel As String = If(zone <= maxZone, $"[{zone + 1}] {Zones.ZoneNames(zone)}", "AC unit")
             sb.AppendLine($"<text x=""5"" y=""{ZoneCenter}"" class=""label"">{ZoneLabel}</text>")
 
             ' Add temperature scale
@@ -302,8 +302,16 @@ Module Monitor
 
                     ' Add hover circle (4px radius is a good hover target size)
                     sb.AppendLine($"<circle class=""data-point"" cx=""{x}"" cy=""{y}"" r=""4"">")
-                        sb.AppendLine($"  <title>{field}: {row(field)} at {DateTime.Parse(row("date").ToString()):HH:mm}</title>")
-                        sb.AppendLine("</circle>")
+                    sb.AppendLine($"  <title>{field}: {row(field)} at {DateTime.Parse(row("date").ToString()):HH:mm}</title>")
+                    sb.AppendLine("</circle>")
+
+                    ' Add Spill indicator for DamperOpen series only
+                    ' Spill was added later, so early records have a DBNull for Spill
+                    If field = "DamperOpen" AndAlso Not IsDBNull(row("Spill")) AndAlso CInt(row("Spill")) = 1 Then
+                        sb.AppendLine($"<circle cx=""{x}"" cy=""{y}"" r=""6"" fill=""none"" stroke=""red"" stroke-width=""1""/>")
+                        sb.AppendLine($"<text x=""{x}"" y=""{y}"" font-size=""10"" text-anchor=""middle"" dominant-baseline=""central"" fill=""red"">S</text>")
+                    End If
+
                     ' Check for time gap
                     Dim hasGap = prevTime <> DateTime.MinValue AndAlso (dt - prevTime).TotalSeconds > MaxAllowedGapSeconds
 
@@ -352,8 +360,8 @@ Module Monitor
             Next
         Next
 
-        ' Draw data series for AC Unit (similar modifications as above)
-        data = GetACStatusTable(StartDate, EndDate)
+        ' Draw data series for AC Unit
+        Dim ACdata = GetACStatusTable(StartDate)
         ZoneTop = ZoneCount * heightPerZone + ZoneGap + 1        ' top of zone series area
         ZoneBottom = ZoneTop + heightPerZone - ZoneGap - 1     ' bottom of zone series area
         ZoneHeight = ZoneBottom - ZoneTop                               ' height of zone series area
@@ -365,19 +373,19 @@ Module Monitor
             Dim segmentPoints As New List(Of String)
             Dim segmentStarted As Boolean = False
 
-            For Each row In data.Rows
+            For Each row In ACdata.Rows
                 Dim dt = DateTime.Parse(row("Date").ToString())
                 x = marginLeft + ((dt - minHour).TotalSeconds / dateRange) * width
                 Dim normValue As Double = If(field = "ACPower",
                                    CDbl(row("ACPower")),
                                    (CDbl(row(field)) - MinTemp) / (MaxTemp - MinTemp))
-                normValue = Math.Clamp(normValue, -0.1, 1.1)
+                normValue = Math.Clamp(normValue, -0.2, 1.2)        ' clamp, but allow 20% over/under shoot
                 y = ZoneTop + (1.0 - normValue) * ZoneHeight
                 Dim ACState = CBool(row("ACPower"))
                 ' Add hover circle (4px radius is a good hover target size)
                 sb.AppendLine($"<circle class=""data-point"" cx=""{x}"" cy=""{y}"" r=""4"">")
-                    sb.AppendLine($"  <title>{field}: {row(field)} at {DateTime.Parse(row("date").ToString()):HH:mm}</title>")
-                    sb.AppendLine("</circle>")
+                sb.AppendLine($"  <title>{field}: {row(field)} at {DateTime.Parse(row("date").ToString()):HH:mm}</title>")
+                sb.AppendLine("</circle>")
                 ' Check for time gap
                 Dim hasGap = prevTime <> DateTime.MinValue AndAlso (dt - prevTime).TotalSeconds > MaxAllowedGapSeconds
 
@@ -444,19 +452,69 @@ Module Monitor
         Dim legendX = marginLeft + 20
         Dim legendY = height + 60
         Dim legendSpacing = 30
+        ' legend box
         sb.AppendLine($"<rect x=""{legendX - 10}"" y=""{legendY - 15}"" width=""400"" height=""90"" fill=""#fff"" stroke=""#ccc""/>")
+        ' Damper Open
         sb.AppendLine($"<polyline points=""{legendX},{legendY} {legendX + 30},{legendY}"" fill=""none"" stroke=""{damperColor}"" stroke-width=""3""/>")
         sb.AppendLine($"<text x=""{legendX + 40}"" y=""{legendY + 5}"" class=""label"">Damper Open/AC On (0-100%, blue, solid)</text>")
         sb.AppendLine($"<polyline points=""{legendX},{legendY + legendSpacing} {legendX + 30},{legendY + legendSpacing}"" fill=""none"" stroke=""{setPointColor}"" stroke-width=""3"" stroke-dasharray=""{dashed}""/>")
+        ' Spill Active indicator
+        sb.AppendLine($"<circle cx=""{legendX + 289}"" cy=""{legendY + 2}"" r=""6"" fill=""none"" stroke=""red"" stroke-width=""1""/>")
+        sb.AppendLine($"<text x=""{legendX + 285}"" y=""{legendY + 5}"" class=""label"" stroke=""red"">S</text>")
+        sb.AppendLine($"<text x=""{legendX + 300}"" y=""{legendY + 5}"" class=""label"">Spill Active</text>")
+
+        ' Set Point
         sb.AppendLine($"<text x=""{legendX + 40}"" y=""{legendY + legendSpacing + 5}"" class=""label"">Set Point ({MinTemp}-{MaxTemp}°C, green, dotted)</text>")
+        ' Temperature
         sb.AppendLine($"<polyline points=""{legendX},{legendY + legendSpacing * 2} {legendX + 30},{legendY + legendSpacing * 2}"" fill=""none"" stroke=""{tempColor}"" stroke-width=""3""/>")
-        sb.AppendLine($"<text x=""{legendX + 40}"" y=""{legendY + legendSpacing * 2 + 5}"" class=""label"">Temperature ({MinTemp}-{MaxTemp}°C, orange/red, solid)</text>")
-        sb.AppendLine($"<text x=""{legendX + 400}"" y=""{legendY}"" class=""comment"">Chart of parameters for AirTouch console {AirTouch5Console.AirTouchID} on {Now():yyyy-MM-dd HH:mm}</text>")
+        sb.AppendLine($"<text x=""{legendX + 40}"" y=""{legendY + legendSpacing * 2 + 5}"" class=""label"">Temperature ({MinTemp}-{MaxTemp}°C, red, solid)</text>")
+        ' Add some notes
+        sb.AppendLine($"<text x=""{legendX + 400}"" y=""{legendY}"" class=""comment"">Chart of parameters for AirTouch console {AirTouch5Console.AirTouchID} V{VersionInfo.AnnotatedVersion} on {Now():yyyy-MM-dd HH:mm}</text>")
+        sb.AppendLine($"<text x=""{legendX + 400}"" y=""{legendY + 20}"" class=""comment"">AirTouch Diagnostic tool ©2025 Marc Hillman</text>")
+        Dim OnTime = CalculateACOnTimePercentage(ACdata)
+        sb.AppendLine($"<text x=""{legendX + 400}"" y=""{legendY + 40}"" class=""comment"">AC On time {OnTime:0.0}%</text>")
         ' Add tooltip container (place near end before closing </svg>)
         sb.AppendLine("<rect id=""tooltip-box"" class=""tooltip"" width=""120"" height=""50"" rx=""5"" ry=""5""></rect>")
-            sb.AppendLine("<text id=""tooltip-text"" class=""tooltip"" font-size=""11""></text>")
+        sb.AppendLine("<text id=""tooltip-text"" class=""tooltip"" font-size=""11""></text>")
         sb.AppendLine("</svg>")
         Return sb.ToString()
+    End Function
+
+    Public Function CalculateACOnTimePercentage(ACdata As Data.DataTable) As Double
+        ' Get AC data
+        If ACdata Is Nothing OrElse ACdata.Rows.Count = 0 Then Throw New Exception("AC data is missing or empty")
+        Dim StartDate = ACdata.AsEnumerable().Min(Function(r) DateTime.Parse(r("date").ToString()))
+        Dim EndDate = ACdata.AsEnumerable().Max(Function(r) DateTime.Parse(r("date").ToString()))
+
+        Dim totalTimeSpan As TimeSpan = EndDate - StartDate
+        Dim totalSeconds As Double = totalTimeSpan.TotalSeconds
+        If totalSeconds <= 0.0 Then Throw New Exception($"Total Seconds is {totalSeconds}")
+        Dim onTimeSeconds As Double = 0
+        Dim prevTime As DateTime = StartDate
+        Dim prevPower As Integer = 0 ' Assume AC starts off
+
+        ' Calculate on-time
+        For Each row As DataRow In ACdata.Rows
+            Dim currentTime As DateTime = DateTime.Parse(row("date").ToString())
+            Dim currentPower As Integer = CInt(row("ACPower"))
+
+            ' If AC was on during this period, add to onTimeSeconds
+            If prevPower = 1 Then
+                onTimeSeconds += (currentTime - prevTime).TotalSeconds
+            End If
+
+            prevTime = currentTime
+            prevPower = currentPower
+        Next
+
+        ' Handle the last segment (from last reading to EndDate)
+        If prevPower = 1 Then
+            onTimeSeconds += (EndDate - prevTime).TotalSeconds
+        End If
+
+        ' Calculate percentage
+        Dim percentageOnTime As Double = (onTimeSeconds / totalSeconds) * 100
+        Return percentageOnTime
     End Function
     Public Function ConvertSvgStringToPng(svgString As String, outputPath As String) As Boolean
         Try
@@ -520,15 +578,13 @@ Module Monitor
         ' Remove tooltip titles
         Dim titles = svgDoc.Descendants().OfType(Of SvgTitle)().ToList()
         For Each title In titles
-            If title.Parent IsNot Nothing Then
-                title.Parent.Children.Remove(title)
-            End If
+            title.Parent?.Children.Remove(title)
         Next
     End Sub
-    Public Function GetZoneDataTable(StartDate As Date, EndDate As Date) As DataTable
-        Dim dt As New DataTable()
+    Public Function GetZoneDataTable(StartDate As Date) As Data.DataTable
+        Dim dt As New Data.DataTable()
 
-        Dim sqlQuery As String = $"SELECT date,ZoneNumber,ZoneState,DamperOpen,ZoneData.SetPoint,ZoneData.Temperature FROM ZoneData JOIN ACStatus USING (`id`) WHERE DATE(`date`) BETWEEN '{StartDate:yyyy-MM-dd}' AND '{EndDate:yyyy-MM-dd}' order by `date`,`ZoneNumber`"
+        Dim sqlQuery As String = $"SELECT date,ZoneNumber,ZoneState,DamperOpen,ZoneData.SetPoint,ZoneData.Temperature, Spill FROM ZoneData JOIN ACStatus USING (`id`) WHERE DATE(`date`) = '{StartDate:yyyy-MM-dd}' order by `date`,`ZoneNumber`"
 
         Using conn As New SqliteConnection(connectionString)
             conn.Open()
@@ -541,10 +597,10 @@ Module Monitor
 
         Return dt
     End Function
-    Public Function GetACStatusTable(StartDate As Date, EndDate As Date) As DataTable
-        Dim dt As New DataTable()
+    Public Function GetACStatusTable(StartDate As Date) As Data.DataTable
+        Dim dt As New Data.DataTable()
 
-        Dim sqlQuery As String = $"SELECT * FROM ACStatus WHERE DATE(`date`) BETWEEN '{StartDate:yyyy-MM-dd}' AND '{EndDate:yyyy-MM-dd}' order by id"
+        Dim sqlQuery As String = $"SELECT * FROM ACStatus WHERE DATE(`date`) = '{StartDate:yyyy-MM-dd}' order by id"
 
         Using conn As New SqliteConnection(connectionString)
             conn.Open()

@@ -84,6 +84,7 @@
     Public acStatusMsg As ACStatusMessage
     Public Sub GetACStatus()
         ' Create extended message requesting AC capabilities
+        Form1.AppendText($"GetACStatus{vbCrLf}")
         Dim requestData() As Byte = CreateMessage(MessageType.Control, {CommandMessages.ACStatus, 0, 0, 0, 0, 0, 0, 0})
 
         If Not AirTouch5Console.Connected Then Throw New System.Exception("Console not connected. Cannot retrieve AC status.")

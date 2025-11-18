@@ -105,6 +105,7 @@ Friend Module ACability
     ' 3. Outputs capability information to debug
     Public Sub GetACability()
         ' Create extended message requesting AC capabilities
+        Form1.AppendText($"GetACability{vbCrLf}")
         Dim requestData() As Byte = CreateMessage(MessageType.Extended, {&HFF, &H11})
 
         If Not AirTouch5Console.Connected Then Throw New System.Exception("Console not connected. Cannot retrieve AC ability.")

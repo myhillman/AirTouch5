@@ -36,6 +36,7 @@ Partial Class Form1
         ExportExcelToolStripMenuItem = New ToolStripMenuItem()
         ChartToolStripMenuItem = New ToolStripMenuItem()
         TextBox1 = New TextBox()
+        MakeAllChartsToolStripMenuItem = New ToolStripMenuItem()
         MenuStrip1.SuspendLayout()
         SuspendLayout()
         ' 
@@ -99,7 +100,7 @@ Partial Class Form1
         ' 
         ' MonitorToolStripMenuItem
         ' 
-        MonitorToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {StartMonitorToolStripMenuItem, ExportExcelToolStripMenuItem, ChartToolStripMenuItem})
+        MonitorToolStripMenuItem.DropDownItems.AddRange(New ToolStripItem() {StartMonitorToolStripMenuItem, ExportExcelToolStripMenuItem, ChartToolStripMenuItem, MakeAllChartsToolStripMenuItem})
         MonitorToolStripMenuItem.Name = "MonitorToolStripMenuItem"
         MonitorToolStripMenuItem.Size = New Size(62, 20)
         MonitorToolStripMenuItem.Text = "Monitor"
@@ -128,8 +129,15 @@ Partial Class Form1
         TextBox1.Location = New Point(11, 34)
         TextBox1.Multiline = True
         TextBox1.Name = "TextBox1"
+        TextBox1.ScrollBars = ScrollBars.Vertical
         TextBox1.Size = New Size(777, 404)
         TextBox1.TabIndex = 1
+        ' 
+        ' MakeAllChartsToolStripMenuItem
+        ' 
+        MakeAllChartsToolStripMenuItem.Name = "MakeAllChartsToolStripMenuItem"
+        MakeAllChartsToolStripMenuItem.Size = New Size(180, 22)
+        MakeAllChartsToolStripMenuItem.Text = "Make All Charts"
         ' 
         ' Form1
         ' 
@@ -140,7 +148,7 @@ Partial Class Form1
         Controls.Add(MenuStrip1)
         MainMenuStrip = MenuStrip1
         Name = "Form1"
-        Text = "Form1"
+        Text = "AirTouch 5"
         MenuStrip1.ResumeLayout(False)
         MenuStrip1.PerformLayout()
         ResumeLayout(False)
@@ -161,5 +169,6 @@ Partial Class Form1
     Friend WithEvents StartMonitorToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ExportExcelToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ChartToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents MakeAllChartsToolStripMenuItem As ToolStripMenuItem
 
 End Class

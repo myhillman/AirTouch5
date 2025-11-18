@@ -3,6 +3,7 @@ Public Class Form1
     Private Async Sub FindControllerToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles FindControllerToolStripMenuItem.Click
         Await DiscoverConsole()
         If AirTouch5Console.Connected Then
+            GetVersion()
             RefreshData()
         End If
     End Sub
@@ -29,14 +30,13 @@ Public Class Form1
     End Sub
     Sub RefreshData()
         If AirTouch5Console.Connected Then
-            GetVersion()
-            GetZoneNames()
-            GetZoneStatus()
             GetACability()
             GetACStatus()
-            TextBox1.AppendText("Refresh complete" & vbCrLf)
+            GetZoneNames()
+            GetZoneStatus()
+            AppendText("Refresh complete" & vbCrLf)
         Else
-            TextBox1.AppendText("Console not connected. Cannot refresh data." & vbCrLf)
+            AppendText("Console not connected. Cannot refresh data." & vbCrLf)
         End If
     End Sub
 
@@ -48,10 +48,12 @@ Public Class Form1
         If Not AirTouch5Console.Connected Then
             Await DiscoverConsole()
             If AirTouch5Console.Connected Then
+                GetVersion()
                 RefreshData()
             End If
         End If
         Monitor.SetMainForm(Me)
+        Me.Text = $"{Me.Text} (Monitoring)"
         Monitor.StartZoneMonitoring()
     End Sub
 
@@ -63,11 +65,11 @@ Public Class Form1
         ' If we have no zone name data, connect and get it.
         If Not AirTouch5Console.Connected Then
             Await DiscoverConsole()
+            GetVersion()
         End If
 
         ' Read the start and end dates from the user
         Dim startDate As Date
-        Dim endDate As Date
         Dim DefaultDate = Strings.Format(Now(), "yyyy-MM-dd")
 
         ' Input and validate start date
@@ -80,28 +82,16 @@ Public Class Form1
             End If
         End While
 
-        ' Input and validate end date
-        DefaultDate = Strings.Format(startDate, "yyyy-MM-dd")
-        While True
-            Dim endInput = InputBox("Enter end date (YYYY-MM-DD): ", "Start Date", DefaultDate)
-            If Date.TryParseExact(endInput, "yyyy-MM-dd",
-                                 System.Globalization.CultureInfo.InvariantCulture,
-                                 System.Globalization.DateTimeStyles.None, endDate) Then
-                ' Additional validation to ensure end date is after start date
-                If endDate >= startDate Then
-                    Exit While
-                End If
-            End If
-        End While
         ' Get the zone names
         If ZoneNames.Count = 0 Then
             GetZoneNames()
         End If
-        Dim svg = GenerateZoneSvgChart(startDate, endDate)      ' generate the chart
-        Dim svgPath = "ZoneChart.svg"
+        Dim svg = GenerateZoneSvgChart(startDate)      ' generate the chart
+        Dim DateString = Format(startDate, "yyyy-MM-dd")
+        Dim svgPath = $"ZoneChart_{DateString}.svg"
         System.IO.File.WriteAllText(svgPath, svg)
-        Monitor.ConvertSvgStringToPng(svg, "ZoneChart.png")         ' save as png
-        TextBox1.AppendText($"SVG file written to {svgPath}{vbCrLf}")
+        Monitor.ConvertSvgStringToPng(svg, $"ZoneChart_{DateString}.png")         ' save as png
+        AppendText($"SVG file written to {svgPath}{vbCrLf}")
         ' Open with default browser (works in .NET Framework and .NET Core)
         Try
             Dim psi As New ProcessStartInfo With {
@@ -120,5 +110,20 @@ Public Class Form1
         Else
             TextBox1.AppendText(text)
         End If
+    End Sub
+
+    Private Sub MakeAllChartsToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles MakeAllChartsToolStripMenuItem.Click
+        ' (re)make charts for all days
+        Dim dt As Date = DateTime.Parse("2025-07-19") ' Start date for the charts
+        Dim endd As Date = Now
+        While dt <= endd
+            Dim svg = GenerateZoneSvgChart(dt)      ' generate the chart
+            Dim DateString = Format(dt, "yyyy-MM-dd")
+            Dim svgPath = $"ZoneChart_{DateString}.svg"
+            System.IO.File.WriteAllText(svgPath, svg)
+            Monitor.ConvertSvgStringToPng(svg, $"ZoneChart_{DateString}.png")         ' save as png
+            AppendText($"SVG file written to {svgPath}{vbCrLf}")
+            dt = dt.AddDays(1)
+        End While
     End Sub
 End Class

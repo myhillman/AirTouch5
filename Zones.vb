@@ -161,11 +161,12 @@ Friend Module Zones
                 zoneStatus = ZoneStatusMessage.Parse(msg.data, index)
 
                 ' Store in dictionary
-                ZoneStatuses(zoneStatus.ZoneNumber) = zoneStatus
+                If zoneStatus.ZoneNumber < acData.ZoneCount Then
+                    ZoneStatuses(zoneStatus.ZoneNumber) = zoneStatus
 
-                ' Output debug information
-                With zoneStatus
-                    Debug.WriteLine(
+                    ' Output debug information
+                    With zoneStatus
+                        Debug.WriteLine(
                         $"Zone: {ZoneNames(.ZoneNumber)} " &
                         $"Power State: { .ZoneState} " &
                         $"Control Method: { .ControlMethod} " &
@@ -175,7 +176,10 @@ Friend Module Zones
                         $"Spill: { .Spill} " &
                         $"Sensor: { .Sensor} " &
                         $"Battery: { .Battery}")
-                End With
+                    End With
+                Else
+                    Form1.AppendText($"Data for zone {zoneStatus.ZoneNumber} ignored as it exceeds number of zones{vbCrLf}")
+                End If
                 ' Move to next zone status entry
                 index += 8
             End While
